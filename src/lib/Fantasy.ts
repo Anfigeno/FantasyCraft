@@ -15,6 +15,7 @@ class ConstructorApi {
 export default class Fantasy extends ConstructorApi {
   public tickets = new Tickets(this.tokenApi);
   public mensajesDelSistema = new MensajesDelSistema(this.tokenApi);
+  public canalesImportantes = new CanalesImportantes(this.tokenApi);
 }
 
 class Tickets
@@ -113,6 +114,54 @@ class MensajesDelSistema
   }
 }
 
+class CanalesImportantes
+  extends ConstructorApi
+  implements ManejadorDeTablas, DatosCanalesImportantes
+{
+  public idGeneral: string | null;
+  public idSugerencias: string | null;
+  public idVotaciones: string | null;
+
+  public ruta = `${this.urlApi}/canales_importantes`;
+
+  public async obtener(): Promise<void> {
+    const respuesta = await fetch(this.ruta, {
+      method: "GET",
+      headers: this.headers,
+    });
+
+    if (!respuesta.ok) {
+      const error = JSON.stringify(await respuesta.json());
+      throw new Error(`Error al obtener los canales importantes: ${error}`);
+    }
+
+    const datos: DatosCanalesImportantesApi = await respuesta.json();
+
+    this.idGeneral = datos.id_general;
+    this.idSugerencias = datos.id_sugerencias;
+    this.idVotaciones = datos.id_votaciones;
+  }
+
+  public async actualizar(nuevosDatos: DatosCanalesImportantes): Promise<void> {
+    const nuevosDatosApi: DatosCanalesImportantesApi = {
+      id_general: nuevosDatos.idGeneral,
+      id_sugerencias: nuevosDatos.idSugerencias,
+      id_votaciones: nuevosDatos.idVotaciones,
+    };
+
+    const respuesta = await fetch(this.ruta, {
+      method: "PUT",
+      headers: this.headers,
+      body: JSON.stringify(nuevosDatosApi),
+    });
+
+    if (!respuesta.ok) {
+      const error = JSON.stringify(await respuesta.json());
+      throw new Error(`Error al actualizar los canales importantes: ${error}`);
+    }
+  }
+}
+
 interface ManejadorDeTablas {
   ruta: string;
   obtener(): Promise<void>;
@@ -133,4 +182,16 @@ interface DatosMensajesDelSistema {
 
 interface DatosMensajesDelSistemaApi {
   bienvenida: string | null;
+}
+
+interface DatosCanalesImportantes {
+  idGeneral: string | null;
+  idVotaciones: string | null;
+  idSugerencias: string | null;
+}
+
+interface DatosCanalesImportantesApi {
+  id_general: string | null;
+  id_sugerencias: string | null;
+  id_votaciones: string | null;
 }
