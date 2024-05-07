@@ -14,6 +14,7 @@ class ConstructorApi {
 
 export default class Fantasy extends ConstructorApi {
   public tickets = new Tickets(this.tokenApi);
+  public mensajesDelSistema = new MensajesDelSistema(this.tokenApi);
 }
 
 class Tickets
@@ -66,6 +67,52 @@ class Tickets
   }
 }
 
+class MensajesDelSistema
+  extends ConstructorApi
+  implements ManejadorDeTablas, MensajesDelSistema
+{
+  public bienvenida: string | null;
+
+  public ruta = `${this.urlApi}/mensajes_del_sistema`;
+
+  public async obtener(): Promise<void> {
+    const respuesta = await fetch(this.ruta, {
+      method: "GET",
+      headers: this.headers,
+    });
+
+    if (!respuesta.ok) {
+      const error = JSON.stringify(await respuesta.json());
+      throw new Error(`Error al obtener los mensajes del sistema: ${error}`);
+    }
+
+    const datos: DatosMensajesDelSistemaApi = await respuesta.json();
+
+    this.bienvenida = datos.bienvenida;
+  }
+
+  public async actualizar(nuevosDatos: DatosMensajesDelSistema): Promise<void> {
+    const nuevosDatosApi: DatosMensajesDelSistemaApi = {
+      bienvenida: nuevosDatos.bienvenida,
+    };
+
+    const respuesta = await fetch(this.ruta, {
+      method: "PUT",
+      headers: this.headers,
+      body: JSON.stringify(nuevosDatosApi),
+    });
+
+    if (!respuesta.ok) {
+      const error = JSON.stringify(await respuesta.json());
+      throw new Error(`Error al actualizar los mensajes del sistema: ${error}`);
+    }
+
+    const datos: DatosMensajesDelSistemaApi = await respuesta.json();
+
+    this.bienvenida = datos.bienvenida;
+  }
+}
+
 interface ManejadorDeTablas {
   ruta: string;
   obtener(): Promise<void>;
@@ -73,9 +120,17 @@ interface ManejadorDeTablas {
 }
 
 interface DatosTickets {
-  categoria: string;
+  categoria: string | null;
 }
 
 interface DatosTicketsApi {
-  categoria: string;
+  categoria: string | null;
+}
+
+interface DatosMensajesDelSistema {
+  bienvenida: string | null;
+}
+
+interface DatosMensajesDelSistemaApi {
+  bienvenida: string | null;
 }
