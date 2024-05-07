@@ -61,10 +61,6 @@ class Tickets
         `Error al actualizar la información de los tickets: ${error}`,
       );
     }
-
-    const datos: DatosTicketsApi = await respuesta.json();
-
-    this.categoria = datos.categoria;
   }
 }
 
@@ -107,10 +103,6 @@ class MensajesDelSistema
       const error = JSON.stringify(await respuesta.json());
       throw new Error(`Error al actualizar los mensajes del sistema: ${error}`);
     }
-
-    const datos: DatosMensajesDelSistemaApi = await respuesta.json();
-
-    this.bienvenida = datos.bienvenida;
   }
 }
 
