@@ -1,6 +1,6 @@
 {
   "name": "fantasycraft",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "description": "El bot oficial del servidor de Discord FantasyCraft",
   "main": "src/app.ts",
