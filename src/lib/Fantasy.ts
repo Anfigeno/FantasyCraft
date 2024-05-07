@@ -16,6 +16,7 @@ export default class Fantasy extends ConstructorApi {
   public tickets = new Tickets(this.tokenApi);
   public mensajesDelSistema = new MensajesDelSistema(this.tokenApi);
   public canalesImportantes = new CanalesImportantes(this.tokenApi);
+  public comandosPersonalizados = new ComandosPersonalizados(this.tokenApi);
 }
 
 class Tickets
@@ -154,6 +155,63 @@ class CanalesImportantes
   }
 }
 
+class ComandosPersonalizados
+  extends ConstructorApi
+  implements ManejadorDeTablas
+{
+  public ruta = `${this.urlApi}/comandos_personalizados`;
+  public comandosPersonalizados: DatosComandoPersonalizado[] = [];
+
+  public async obtener(): Promise<void> {
+    const respuesta = await fetch(this.ruta, {
+      method: "GET",
+      headers: this.headers,
+    });
+
+    if (!respuesta.ok) {
+      const error = JSON.stringify(await respuesta.json());
+      throw new Error(`Error al obtener los comandos personalizados: ${error}`);
+    }
+
+    const datos: DatosComandoPersonalizadoApi[] = await respuesta.json();
+
+    this.comandosPersonalizados = datos.map((dato) => {
+      return {
+        palabraClave: dato.palabra_clave,
+        contenido: dato.contenido,
+        creadoPor: dato.creado_por,
+      };
+    });
+  }
+
+  public async actualizar(
+    nuevosDatos: DatosComandoPersonalizado[],
+  ): Promise<void> {
+    const nuevosDatosApi: DatosComandoPersonalizadoApi[] = nuevosDatos.map(
+      (dato) => {
+        return {
+          palabra_clave: dato.palabraClave,
+          contenido: dato.contenido,
+          creado_por: dato.creadoPor,
+        };
+      },
+    );
+
+    const respuesta = await fetch(this.ruta, {
+      method: "PUT",
+      headers: this.headers,
+      body: JSON.stringify(nuevosDatosApi),
+    });
+
+    if (!respuesta.ok) {
+      const error = JSON.stringify(await respuesta.json());
+      throw new Error(
+        `Error al actualizar los comandos personalizados: ${error}`,
+      );
+    }
+  }
+}
+
 interface ManejadorDeTablas {
   ruta: string;
   obtener(): Promise<void>;
@@ -186,4 +244,16 @@ interface DatosCanalesImportantesApi {
   id_general: string | null;
   id_sugerencias: string | null;
   id_votaciones: string | null;
+}
+
+interface DatosComandoPersonalizado {
+  palabraClave: string;
+  contenido: string;
+  creadoPor: string;
+}
+
+interface DatosComandoPersonalizadoApi {
+  palabra_clave: string;
+  contenido: string;
+  creado_por: string;
 }
