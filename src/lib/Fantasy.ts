@@ -25,7 +25,7 @@ class Tickets
 {
   public ruta = `${this.urlApi}/tickets`;
 
-  public categoria: string;
+  public idCategoria: string;
 
   public async obtener(): Promise<void> {
     const respuesta = await fetch(this.ruta, {
@@ -42,12 +42,12 @@ class Tickets
 
     const datos: DatosTicketsApi = await respuesta.json();
 
-    this.categoria = datos.categoria;
+    this.idCategoria = datos.id_categoria;
   }
 
   public async actualizar(nuevosDatos: DatosTickets): Promise<void> {
     const nuevosDatosApi: DatosTicketsApi = {
-      categoria: nuevosDatos.categoria,
+      id_categoria: nuevosDatos.idCategoria,
     };
 
     const respuesta = await fetch(this.urlApi, {
@@ -179,7 +179,7 @@ class ComandosPersonalizados
       return {
         palabraClave: dato.palabra_clave,
         contenido: dato.contenido,
-        creadoPor: dato.creado_por,
+        autor: dato.autor,
       };
     });
   }
@@ -192,7 +192,7 @@ class ComandosPersonalizados
         return {
           palabra_clave: dato.palabraClave,
           contenido: dato.contenido,
-          creado_por: dato.creadoPor,
+          autor: dato.autor,
         };
       },
     );
@@ -219,11 +219,11 @@ interface ManejadorDeTablas {
 }
 
 interface DatosTickets {
-  categoria: string | null;
+  idCategoria: string | null;
 }
 
 interface DatosTicketsApi {
-  categoria: string | null;
+  id_categoria: string | null;
 }
 
 interface DatosMensajesDelSistema {
@@ -249,11 +249,11 @@ interface DatosCanalesImportantesApi {
 interface DatosComandoPersonalizado {
   palabraClave: string;
   contenido: string;
-  creadoPor: string;
+  autor: string;
 }
 
 interface DatosComandoPersonalizadoApi {
   palabra_clave: string;
   contenido: string;
-  creado_por: string;
+  autor: string;
 }
