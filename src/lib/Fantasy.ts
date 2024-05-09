@@ -18,6 +18,7 @@ export default class Fantasy extends ConstructorApi {
   public canalesImportantes = new CanalesImportantes(this.tokenApi);
   public comandosPersonalizados = new ComandosPersonalizados(this.tokenApi);
   public embeds = new Embeds(this.tokenApi);
+  public rolesDeAdministracion = new RolesDeAdministracion(this.tokenApi);
 }
 
 class Tickets
@@ -161,7 +162,7 @@ class ComandosPersonalizados
   implements ManejadorDeTablas
 {
   public ruta = `${this.urlApi}/comandos_personalizados`;
-  public comandosPersonalizados: DatosComandoPersonalizado[] = [];
+  public lista: DatosComandoPersonalizado[] = [];
 
   public async obtener(): Promise<void> {
     const respuesta = await fetch(this.ruta, {
@@ -176,7 +177,7 @@ class ComandosPersonalizados
 
     const datos: DatosComandoPersonalizadoApi[] = await respuesta.json();
 
-    this.comandosPersonalizados = datos.map((dato) => {
+    this.lista = datos.map((dato) => {
       return {
         palabraClave: dato.palabra_clave,
         contenido: dato.contenido,
@@ -255,13 +256,62 @@ class Embeds extends ConstructorApi implements ManejadorDeTablas, DatosEmbeds {
   }
 }
 
+class RolesDeAdministracion
+  extends ConstructorApi
+  implements ManejadorDeTablas, DatosRolesDeAdministracion
+{
+  public ruta = `${this.urlApi}/roles_de_administracion`;
+
+  public idAdministrador: string | null;
+  public idStaff: string | null;
+
+  public async obtener(): Promise<void> {
+    const respuesta = await fetch(this.ruta, {
+      method: "GET",
+      headers: this.headers,
+    });
+
+    if (!respuesta.ok) {
+      const error = JSON.stringify(await respuesta.json());
+      throw new Error(`Error al obtener los roles de administración: ${error}`);
+    }
+
+    const datos: DatosRolesDeAdministracionApi = await respuesta.json();
+
+    this.idAdministrador = datos.id_administrador;
+    this.idStaff = datos.id_staff;
+  }
+
+  public async actualizar(
+    nuevosDatos: DatosRolesDeAdministracion,
+  ): Promise<void> {
+    const nuevosDatosApi: DatosRolesDeAdministracionApi = {
+      id_administrador: nuevosDatos.idAdministrador,
+      id_staff: nuevosDatos.idStaff,
+    };
+
+    const respuesta = await fetch(this.ruta, {
+      method: "PUT",
+      headers: this.headers,
+      body: JSON.stringify(nuevosDatosApi),
+    });
+
+    if (!respuesta.ok) {
+      const error = JSON.stringify(await respuesta.json());
+      throw new Error(
+        `Error al actualizar los roles de administración: ${error}`,
+      );
+    }
+  }
+}
+
 interface ManejadorDeTablas {
   ruta: string;
   obtener(): Promise<void>;
   actualizar(nuevosDatos: any): Promise<void>;
 }
 
-interface DatosTickets {
+export interface DatosTickets {
   idCategoria: string | null;
 }
 
@@ -269,7 +319,7 @@ interface DatosTicketsApi {
   id_categoria: string | null;
 }
 
-interface DatosMensajesDelSistema {
+export interface DatosMensajesDelSistema {
   bienvenida: string | null;
 }
 
@@ -277,7 +327,7 @@ interface DatosMensajesDelSistemaApi {
   bienvenida: string | null;
 }
 
-interface DatosCanalesImportantes {
+export interface DatosCanalesImportantes {
   idGeneral: string | null;
   idVotaciones: string | null;
   idSugerencias: string | null;
@@ -289,7 +339,7 @@ interface DatosCanalesImportantesApi {
   id_votaciones: string | null;
 }
 
-interface DatosComandoPersonalizado {
+export interface DatosComandoPersonalizado {
   palabraClave: string;
   contenido: string;
   autor: string;
@@ -301,7 +351,7 @@ interface DatosComandoPersonalizadoApi {
   autor: string;
 }
 
-interface DatosEmbeds {
+export interface DatosEmbeds {
   color: string | null;
   urlImagenLimitadora: string | null;
 }
@@ -309,4 +359,14 @@ interface DatosEmbeds {
 interface DatosEmbedsApi {
   color: string | null;
   url_imagen_limitadora: string | null;
+}
+
+export interface DatosRolesDeAdministracion {
+  idAdministrador: string | null;
+  idStaff: string | null;
+}
+
+interface DatosRolesDeAdministracionApi {
+  id_administrador: string | null;
+  id_staff: string | null;
 }
