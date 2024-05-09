@@ -17,6 +17,7 @@ export default class Fantasy extends ConstructorApi {
   public mensajesDelSistema = new MensajesDelSistema(this.tokenApi);
   public canalesImportantes = new CanalesImportantes(this.tokenApi);
   public comandosPersonalizados = new ComandosPersonalizados(this.tokenApi);
+  public embeds = new Embeds(this.tokenApi);
 }
 
 class Tickets
@@ -25,7 +26,7 @@ class Tickets
 {
   public ruta = `${this.urlApi}/tickets`;
 
-  public idCategoria: string;
+  public idCategoria: string | null;
 
   public async obtener(): Promise<void> {
     const respuesta = await fetch(this.ruta, {
@@ -212,6 +213,48 @@ class ComandosPersonalizados
   }
 }
 
+class Embeds extends ConstructorApi implements ManejadorDeTablas, DatosEmbeds {
+  public ruta = `${this.urlApi}/embeds`;
+
+  public color: string | null;
+  public urlImagenLimitadora: string | null;
+
+  public async obtener(): Promise<void> {
+    const respuesta = await fetch(this.ruta, {
+      method: "GET",
+      headers: this.headers,
+    });
+
+    if (!respuesta.ok) {
+      const error = JSON.stringify(await respuesta.json());
+      throw new Error(`Error al obtener los embeds: ${error}`);
+    }
+
+    const datos: DatosEmbedsApi = await respuesta.json();
+
+    this.color = datos.color;
+    this.urlImagenLimitadora = datos.url_imagen_limitadora;
+  }
+
+  public async actualizar(nuevosDatos: DatosEmbeds): Promise<void> {
+    const nuevosDatosApi: DatosEmbedsApi = {
+      color: nuevosDatos.color,
+      url_imagen_limitadora: nuevosDatos.urlImagenLimitadora,
+    };
+
+    const respuesta = await fetch(this.ruta, {
+      method: "PUT",
+      headers: this.headers,
+      body: JSON.stringify(nuevosDatosApi),
+    });
+
+    if (!respuesta.ok) {
+      const error = JSON.stringify(await respuesta.json());
+      throw new Error(`Error al actualizar los embeds: ${error}`);
+    }
+  }
+}
+
 interface ManejadorDeTablas {
   ruta: string;
   obtener(): Promise<void>;
@@ -256,4 +299,14 @@ interface DatosComandoPersonalizadoApi {
   palabra_clave: string;
   contenido: string;
   autor: string;
+}
+
+interface DatosEmbeds {
+  color: string | null;
+  urlImagenLimitadora: string | null;
+}
+
+interface DatosEmbedsApi {
+  color: string | null;
+  url_imagen_limitadora: string | null;
 }
