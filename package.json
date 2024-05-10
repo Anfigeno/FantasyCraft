@@ -5,7 +5,8 @@
   "description": "El bot oficial del servidor de Discord FantasyCraft",
   "main": "src/app.ts",
   "scripts": {
-    "dev": "bun --watch ./src/app.ts | pino-pretty"
+    "dev": "bun --watch ./src/app.ts | pino-pretty",
+    "registrar-comandos": "bun ./src/registrarComandos.ts | pino-pretty"
   },
   "keywords": [
     "discord",
