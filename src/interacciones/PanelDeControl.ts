@@ -15,6 +15,7 @@ import {
 } from "discord.js";
 import AccionesBase from "@lib/AccionesBase";
 import {
+  DatosCanalesImportantes,
   DatosEmbeds,
   DatosMensajesDelSistema,
   DatosTickets,
@@ -119,6 +120,7 @@ export default class PanelDeControl extends AccionesBase {
       OpcionEmbeds.opcion,
       OpcionTickets.opcion,
       OpcionMensajesDelSistema.opcion,
+      OpcionCanalesImportantes.opcion,
     ];
 
     const listaDeOpciones =
@@ -157,6 +159,7 @@ export default class PanelDeControl extends AccionesBase {
       OpcionEmbeds.mostrarModalRecolector(interaccion);
       OpcionTickets.mostrarModalRecolector(interaccion);
       OpcionMensajesDelSistema.mostrarModalRecolector(interaccion);
+      OpcionCanalesImportantes.mostrarModalRecolector(interaccion);
       //
     } else if (interaccion.isModalSubmit()) {
       //
@@ -164,6 +167,7 @@ export default class PanelDeControl extends AccionesBase {
         OpcionEmbeds.actualizarInformacion(interaccion);
         OpcionTickets.actualizarInformacion(interaccion);
         OpcionMensajesDelSistema.actualizarInformacion(interaccion);
+        OpcionCanalesImportantes.actualizarInformacion(interaccion);
       } catch (error) {
         this.log.error(error);
 
@@ -184,6 +188,78 @@ export default class PanelDeControl extends AccionesBase {
       });
 
       await mensajeDeConfirmacion.delete();
+    }
+  }
+}
+
+class OpcionCanalesImportantes extends AccionesBase {
+  public static opcion = new StringSelectMenuOptionBuilder()
+    .setEmoji("‼️")
+    .setLabel("Actualizar canales importantes")
+    .setValue("canales-importantes");
+
+  public static async mostrarModalRecolector(
+    interaccion: StringSelectMenuInteraction,
+  ): Promise<void> {
+    if (interaccion.customId !== "panel-de-control-opciones") return;
+    if (interaccion.values[0] !== "canales-importantes") return;
+
+    const { canalesImportantes } = this.api;
+    await canalesImportantes.obtener();
+
+    const campos: TextInputBuilder[] = [
+      new TextInputBuilder()
+        .setValue(`${canalesImportantes.idGeneral}`)
+        .setLabel("ID del canal general")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setMaxLength(20)
+        .setCustomId("id-general"),
+      new TextInputBuilder()
+        .setValue(`${canalesImportantes.idVotaciones}`)
+        .setLabel("ID del canal de votaciones")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setMaxLength(20)
+        .setCustomId("id-votaciones"),
+      new TextInputBuilder()
+        .setValue(`${canalesImportantes.idSugerencias}`)
+        .setLabel("ID del canal de sugerencias")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setMaxLength(20)
+        .setCustomId("id-sugerencias"),
+    ];
+
+    const modal = new ModalBuilder()
+      .setCustomId("modal-actualizar-canales-importantes")
+      .setTitle("‼️ Actualizar canales importantes")
+      .setComponents(
+        campos.map((campo) =>
+          new ActionRowBuilder<TextInputBuilder>().setComponents(campo),
+        ),
+      );
+
+    await interaccion.showModal(modal);
+  }
+
+  public static async actualizarInformacion(
+    interaccion: ModalSubmitInteraction,
+  ): Promise<void> {
+    if (interaccion.customId !== "modal-actualizar-canales-importantes") return;
+
+    const { fields: campos } = interaccion;
+
+    const nuevosDatos: DatosCanalesImportantes = {
+      idGeneral: campos.getTextInputValue("id-general"),
+      idVotaciones: campos.getTextInputValue("id-votaciones"),
+      idSugerencias: campos.getTextInputValue("id-sugerencias"),
+    };
+
+    try {
+      await this.api.canalesImportantes.actualizar(nuevosDatos);
+    } catch (error) {
+      throw error;
     }
   }
 }
