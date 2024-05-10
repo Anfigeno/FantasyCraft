@@ -1,5 +1,5 @@
 class ConstructorApi {
-  protected urlApi = "http://localhost:8000";
+  protected urlApi = "http://0.0.0.0:8000/api";
   protected tokenApi = "";
 
   constructor(tokenApi: string) {
@@ -21,6 +21,25 @@ export default class Fantasy extends ConstructorApi {
   public rolesDeAdministracion = new RolesDeAdministracion(this.tokenApi);
 }
 
+function formatearClavesNulas<
+  T extends
+    | DatosTicketsApi
+    | DatosMensajesDelSistemaApi
+    | DatosCanalesImportantesApi
+    | DatosEmbedsApi
+    | DatosRolesDeAdministracionApi,
+>(objeto: T): T {
+  for (const clave in objeto) {
+    const elemento = objeto[clave];
+
+    if (elemento === "null" || !elemento) {
+      objeto[clave] = undefined;
+    }
+  }
+
+  return objeto;
+}
+
 class Tickets
   extends ConstructorApi
   implements ManejadorDeTablas, DatosTickets
@@ -35,7 +54,7 @@ class Tickets
       headers: this.headers,
     });
 
-    if (respuesta.ok) {
+    if (!respuesta.ok) {
       const error = JSON.stringify(await respuesta.json());
       throw new Error(
         `Error al obtener la información de los tickets: ${error}`,
@@ -48,9 +67,11 @@ class Tickets
   }
 
   public async actualizar(nuevosDatos: DatosTickets): Promise<void> {
-    const nuevosDatosApi: DatosTicketsApi = {
+    let nuevosDatosApi: DatosTicketsApi = {
       id_categoria: nuevosDatos.idCategoria,
     };
+
+    nuevosDatosApi = formatearClavesNulas(nuevosDatosApi);
 
     const respuesta = await fetch(this.urlApi, {
       method: "PUT",
@@ -92,9 +113,11 @@ class MensajesDelSistema
   }
 
   public async actualizar(nuevosDatos: DatosMensajesDelSistema): Promise<void> {
-    const nuevosDatosApi: DatosMensajesDelSistemaApi = {
+    let nuevosDatosApi: DatosMensajesDelSistemaApi = {
       bienvenida: nuevosDatos.bienvenida,
     };
+
+    nuevosDatosApi = formatearClavesNulas(nuevosDatosApi);
 
     const respuesta = await fetch(this.ruta, {
       method: "PUT",
@@ -138,11 +161,13 @@ class CanalesImportantes
   }
 
   public async actualizar(nuevosDatos: DatosCanalesImportantes): Promise<void> {
-    const nuevosDatosApi: DatosCanalesImportantesApi = {
+    let nuevosDatosApi: DatosCanalesImportantesApi = {
       id_general: nuevosDatos.idGeneral,
       id_sugerencias: nuevosDatos.idSugerencias,
       id_votaciones: nuevosDatos.idVotaciones,
     };
+
+    nuevosDatosApi = formatearClavesNulas(nuevosDatosApi);
 
     const respuesta = await fetch(this.ruta, {
       method: "PUT",
@@ -238,10 +263,12 @@ class Embeds extends ConstructorApi implements ManejadorDeTablas, DatosEmbeds {
   }
 
   public async actualizar(nuevosDatos: DatosEmbeds): Promise<void> {
-    const nuevosDatosApi: DatosEmbedsApi = {
+    let nuevosDatosApi: DatosEmbedsApi = {
       color: nuevosDatos.color,
       url_imagen_limitadora: nuevosDatos.urlImagenLimitadora,
     };
+
+    nuevosDatosApi = formatearClavesNulas(nuevosDatosApi);
 
     const respuesta = await fetch(this.ruta, {
       method: "PUT",
@@ -285,10 +312,12 @@ class RolesDeAdministracion
   public async actualizar(
     nuevosDatos: DatosRolesDeAdministracion,
   ): Promise<void> {
-    const nuevosDatosApi: DatosRolesDeAdministracionApi = {
+    let nuevosDatosApi: DatosRolesDeAdministracionApi = {
       id_administrador: nuevosDatos.idAdministrador,
       id_staff: nuevosDatos.idStaff,
     };
+
+    nuevosDatosApi = formatearClavesNulas(nuevosDatosApi);
 
     const respuesta = await fetch(this.ruta, {
       method: "PUT",
@@ -316,7 +345,7 @@ export interface DatosTickets {
 }
 
 interface DatosTicketsApi {
-  id_categoria: string | null;
+  id_categoria?: string | null;
 }
 
 export interface DatosMensajesDelSistema {
@@ -324,7 +353,7 @@ export interface DatosMensajesDelSistema {
 }
 
 interface DatosMensajesDelSistemaApi {
-  bienvenida: string | null;
+  bienvenida?: string | null;
 }
 
 export interface DatosCanalesImportantes {
@@ -334,9 +363,9 @@ export interface DatosCanalesImportantes {
 }
 
 interface DatosCanalesImportantesApi {
-  id_general: string | null;
-  id_sugerencias: string | null;
-  id_votaciones: string | null;
+  id_general?: string | null;
+  id_sugerencias?: string | null;
+  id_votaciones?: string | null;
 }
 
 export interface DatosComandoPersonalizado {
@@ -346,9 +375,9 @@ export interface DatosComandoPersonalizado {
 }
 
 interface DatosComandoPersonalizadoApi {
-  palabra_clave: string;
-  contenido: string;
-  autor: string;
+  palabra_clave?: string;
+  contenido?: string;
+  autor?: string;
 }
 
 export interface DatosEmbeds {
@@ -357,8 +386,8 @@ export interface DatosEmbeds {
 }
 
 interface DatosEmbedsApi {
-  color: string | null;
-  url_imagen_limitadora: string | null;
+  color?: string | null;
+  url_imagen_limitadora?: string | null;
 }
 
 export interface DatosRolesDeAdministracion {
@@ -367,6 +396,6 @@ export interface DatosRolesDeAdministracion {
 }
 
 interface DatosRolesDeAdministracionApi {
-  id_administrador: string | null;
-  id_staff: string | null;
+  id_administrador?: string | null;
+  id_staff?: string | null;
 }
