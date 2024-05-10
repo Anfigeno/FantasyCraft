@@ -14,7 +14,7 @@ import {
   TextInputStyle,
 } from "discord.js";
 import AccionesBase from "@lib/AccionesBase";
-import { DatosEmbeds } from "@lib/Fantasy";
+import { DatosEmbeds, DatosTickets } from "@lib/Fantasy";
 
 export default class PanelDeControl extends AccionesBase {
   private static async crearEmbedRestumen(): Promise<EmbedBuilder> {
@@ -111,7 +111,10 @@ export default class PanelDeControl extends AccionesBase {
   ): Promise<void> {
     if (interaccion.commandName !== "panel-de-control") return;
 
-    const opciones: StringSelectMenuOptionBuilder[] = [OpcionEmbeds.opcion];
+    const opciones: StringSelectMenuOptionBuilder[] = [
+      OpcionEmbeds.opcion,
+      OpcionTickets.opcion,
+    ];
 
     const listaDeOpciones =
       new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(
@@ -147,10 +150,12 @@ export default class PanelDeControl extends AccionesBase {
     } else if (interaccion.isStringSelectMenu()) {
       //
       OpcionEmbeds.mostrarModalRecolector(interaccion);
+      OpcionTickets.mostrarModalRecolector(interaccion);
       //
     } else if (interaccion.isModalSubmit()) {
       //
       OpcionEmbeds.actualizarInformacion(interaccion);
+      OpcionTickets.actualizarInformacion(interaccion);
 
       interaccion.message.edit({
         embeds: [await this.crearEmbedRestumen()],
@@ -161,6 +166,62 @@ export default class PanelDeControl extends AccionesBase {
       });
 
       await mensajeDeConfirmacion.delete();
+    }
+  }
+}
+
+class OpcionTickets extends AccionesBase {
+  public static opcion = new StringSelectMenuOptionBuilder()
+    .setEmoji("🎟️")
+    .setLabel("Actualizar tickets")
+    .setValue("tickets");
+
+  public static async mostrarModalRecolector(
+    interaccion: StringSelectMenuInteraction,
+  ): Promise<void> {
+    if (interaccion.customId !== "panel-de-control-opciones") return;
+    if (interaccion.values[0] !== "tickets") return;
+
+    const { tickets } = this.api;
+    await tickets.obtener();
+
+    const campos: TextInputBuilder[] = [
+      new TextInputBuilder()
+        .setValue(`${tickets.idCategoria}`)
+        .setLabel("ID de la categoria")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setMaxLength(20)
+        .setCustomId("id-categoria"),
+    ];
+
+    const modal = new ModalBuilder()
+      .setCustomId("modal-actualizar-tickets")
+      .setTitle("🎟️ Actualizar tickets")
+      .setComponents(
+        campos.map((campo) =>
+          new ActionRowBuilder<TextInputBuilder>().setComponents(campo),
+        ),
+      );
+
+    await interaccion.showModal(modal);
+  }
+
+  public static async actualizarInformacion(
+    interaccion: ModalSubmitInteraction,
+  ): Promise<void> {
+    if (interaccion.customId !== "modal-actualizar-tickets") return;
+
+    const { fields: campos } = interaccion;
+
+    const nuevosDatos: DatosTickets = {
+      idCategoria: campos.getTextInputValue("id-categoria"),
+    };
+
+    try {
+      await this.api.tickets.actualizar(nuevosDatos);
+    } catch (error) {
+      this.log.error(error);
     }
   }
 }
