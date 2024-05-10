@@ -14,7 +14,11 @@ import {
   TextInputStyle,
 } from "discord.js";
 import AccionesBase from "@lib/AccionesBase";
-import { DatosEmbeds, DatosTickets } from "@lib/Fantasy";
+import {
+  DatosEmbeds,
+  DatosMensajesDelSistema,
+  DatosTickets,
+} from "@lib/Fantasy";
 
 export default class PanelDeControl extends AccionesBase {
   private static async crearEmbedRestumen(): Promise<EmbedBuilder> {
@@ -114,6 +118,7 @@ export default class PanelDeControl extends AccionesBase {
     const opciones: StringSelectMenuOptionBuilder[] = [
       OpcionEmbeds.opcion,
       OpcionTickets.opcion,
+      OpcionMensajesDelSistema.opcion,
     ];
 
     const listaDeOpciones =
@@ -151,11 +156,13 @@ export default class PanelDeControl extends AccionesBase {
       //
       OpcionEmbeds.mostrarModalRecolector(interaccion);
       OpcionTickets.mostrarModalRecolector(interaccion);
+      OpcionMensajesDelSistema.mostrarModalRecolector(interaccion);
       //
     } else if (interaccion.isModalSubmit()) {
       //
       OpcionEmbeds.actualizarInformacion(interaccion);
       OpcionTickets.actualizarInformacion(interaccion);
+      OpcionMensajesDelSistema.actualizarInformacion(interaccion);
 
       interaccion.message.edit({
         embeds: [await this.crearEmbedRestumen()],
@@ -166,6 +173,63 @@ export default class PanelDeControl extends AccionesBase {
       });
 
       await mensajeDeConfirmacion.delete();
+    }
+  }
+}
+
+class OpcionMensajesDelSistema extends AccionesBase {
+  public static opcion = new StringSelectMenuOptionBuilder()
+    .setEmoji("💬")
+    .setLabel("Actualizar mensajes del sistema")
+    .setValue("mensajes-del-sistema");
+
+  public static async mostrarModalRecolector(
+    interaccion: StringSelectMenuInteraction,
+  ): Promise<void> {
+    if (interaccion.customId !== "panel-de-control-opciones") return;
+    if (interaccion.values[0] !== "mensajes-del-sistema") return;
+
+    const { mensajesDelSistema } = this.api;
+    await mensajesDelSistema.obtener();
+
+    const campos: TextInputBuilder[] = [
+      new TextInputBuilder()
+        .setValue(`${mensajesDelSistema.bienvenida}`)
+        .setLabel("Bienvenida")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+        .setMaxLength(1200)
+        .setCustomId("bienvenida"),
+    ];
+
+    const modal = new ModalBuilder()
+      .setCustomId("modal-actualizar-mensajes-del-sistema")
+      .setTitle("💬 Actualizar mensajes del sistema")
+      .setComponents(
+        campos.map((campo) =>
+          new ActionRowBuilder<TextInputBuilder>().setComponents(campo),
+        ),
+      );
+
+    await interaccion.showModal(modal);
+  }
+
+  public static async actualizarInformacion(
+    interaccion: ModalSubmitInteraction,
+  ): Promise<void> {
+    if (interaccion.customId !== "modal-actualizar-mensajes-del-sistema")
+      return;
+
+    const { fields: campos } = interaccion;
+
+    const nuevosDatos: DatosMensajesDelSistema = {
+      bienvenida: campos.getTextInputValue("bienvenida"),
+    };
+
+    try {
+      await this.api.mensajesDelSistema.actualizar(nuevosDatos);
+    } catch (error) {
+      this.log.error(error);
     }
   }
 }
