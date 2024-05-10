@@ -160,9 +160,20 @@ export default class PanelDeControl extends AccionesBase {
       //
     } else if (interaccion.isModalSubmit()) {
       //
-      OpcionEmbeds.actualizarInformacion(interaccion);
-      OpcionTickets.actualizarInformacion(interaccion);
-      OpcionMensajesDelSistema.actualizarInformacion(interaccion);
+      try {
+        OpcionEmbeds.actualizarInformacion(interaccion);
+        OpcionTickets.actualizarInformacion(interaccion);
+        OpcionMensajesDelSistema.actualizarInformacion(interaccion);
+      } catch (error) {
+        this.log.error(error);
+
+        await interaccion.reply({
+          content: "Ocurrió un error al ejecutar esta interacción",
+          ephemeral: true,
+        });
+
+        return;
+      }
 
       interaccion.message.edit({
         embeds: [await this.crearEmbedRestumen()],
@@ -229,7 +240,7 @@ class OpcionMensajesDelSistema extends AccionesBase {
     try {
       await this.api.mensajesDelSistema.actualizar(nuevosDatos);
     } catch (error) {
-      this.log.error(error);
+      throw error;
     }
   }
 }
@@ -285,7 +296,7 @@ class OpcionTickets extends AccionesBase {
     try {
       await this.api.tickets.actualizar(nuevosDatos);
     } catch (error) {
-      this.log.error(error);
+      throw error;
     }
   }
 }
@@ -352,8 +363,7 @@ class OpcionEmbeds extends AccionesBase {
     try {
       await embeds.actualizar(nuevosDatos);
     } catch (error) {
-      this.log.error(error);
-      return;
+      throw error;
     }
   }
 }
