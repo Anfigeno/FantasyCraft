@@ -3,7 +3,8 @@
     "baseUrl": ".",
     "paths": {
       "@lib/*": ["./src/lib/*"],
-      "@interacciones/*": ["./src/lib/*"]
+      "@interacciones/*": ["./src/lib/*"],
+      "@eventos/*": ["./src/eventos/*"]
     }
   }
 }
