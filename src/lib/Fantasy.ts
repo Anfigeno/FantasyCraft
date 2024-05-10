@@ -73,7 +73,7 @@ class Tickets
 
     nuevosDatosApi = formatearClavesNulas(nuevosDatosApi);
 
-    const respuesta = await fetch(this.urlApi, {
+    const respuesta = await fetch(this.ruta, {
       method: "PUT",
       headers: this.headers,
       body: JSON.stringify(nuevosDatosApi),
