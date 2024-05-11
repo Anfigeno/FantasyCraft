@@ -16,10 +16,12 @@ import {
 import AccionesBase from "@lib/AccionesBase";
 import {
   DatosCanalesImportantes,
+  DatosComandoPersonalizado,
   DatosEmbeds,
   DatosMensajesDelSistema,
   DatosTickets,
 } from "@lib/Fantasy";
+import comandos from "src/comandos";
 
 export default class PanelDeControl extends AccionesBase {
   private static async crearEmbedRestumen(): Promise<EmbedBuilder> {
@@ -121,6 +123,7 @@ export default class PanelDeControl extends AccionesBase {
       OpcionTickets.opcion,
       OpcionMensajesDelSistema.opcion,
       OpcionCanalesImportantes.opcion,
+      OpcionComandosPersonalizados.opcion,
     ];
 
     const listaDeOpciones =
@@ -160,6 +163,7 @@ export default class PanelDeControl extends AccionesBase {
       OpcionTickets.mostrarModalRecolector(interaccion);
       OpcionMensajesDelSistema.mostrarModalRecolector(interaccion);
       OpcionCanalesImportantes.mostrarModalRecolector(interaccion);
+      OpcionComandosPersonalizados.mostrarModalRecolector(interaccion);
       //
     } else if (interaccion.isModalSubmit()) {
       //
@@ -168,6 +172,7 @@ export default class PanelDeControl extends AccionesBase {
         OpcionTickets.actualizarInformacion(interaccion);
         OpcionMensajesDelSistema.actualizarInformacion(interaccion);
         OpcionCanalesImportantes.actualizarInformacion(interaccion);
+        OpcionComandosPersonalizados.actualizarInformacion(interaccion);
       } catch (error) {
         this.log.error(error);
 
@@ -189,6 +194,116 @@ export default class PanelDeControl extends AccionesBase {
 
       await mensajeDeConfirmacion.delete();
     }
+  }
+}
+
+class OpcionComandosPersonalizados extends AccionesBase {
+  public static opcion = new StringSelectMenuOptionBuilder()
+    .setEmoji("🤖")
+    .setLabel("Actualizar comandos personalizados")
+    .setValue("comandos-personalizados");
+
+  public static async mostrarModalRecolector(
+    interaccion: StringSelectMenuInteraction,
+  ): Promise<void> {
+    if (interaccion.customId !== "panel-de-control-opciones") return;
+    if (interaccion.values[0] !== "comandos-personalizados") return;
+
+    const { comandosPersonalizados } = this.api;
+    await comandosPersonalizados.obtener();
+
+    const campos: TextInputBuilder[] = [
+      new TextInputBuilder()
+        .setValue(this.listaDeComandosAString(comandosPersonalizados.lista))
+        .setLabel("Lista de comandos personalizados")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+        .setCustomId("comandos-personalizados"),
+    ];
+
+    const modal = new ModalBuilder()
+      .setCustomId("modal-actualizar-comandos-personalizados")
+      .setTitle("🤖 Actualizar comandos personalizados")
+      .setComponents(
+        campos.map((campo) =>
+          new ActionRowBuilder<TextInputBuilder>().setComponents(campo),
+        ),
+      );
+
+    await interaccion.showModal(modal);
+  }
+
+  private static listaDeComandosAString(
+    listaDeComandos: DatosComandoPersonalizado[],
+  ): string {
+    if (listaDeComandos.length == 0) "null";
+
+    return listaDeComandos
+      .map((comando) => {
+        return (
+          "[Comando]\n" +
+          `Palabra clave: ${comando.palabraClave}\n` +
+          `Contenido: ${comando.contenido}\n` +
+          `Autor: ${comando.autor}`
+        );
+      })
+      .join("\n");
+  }
+
+  public static async actualizarInformacion(
+    interaccion: ModalSubmitInteraction,
+  ): Promise<void> {
+    if (interaccion.customId !== "modal-actualizar-comandos-personalizados")
+      return;
+
+    const { fields: campos } = interaccion;
+
+    const comandosPersonalizadosString = campos.getTextInputValue(
+      "comandos-personalizados",
+    );
+
+    if (comandosPersonalizadosString.length < 45) {
+      await interaccion.reply({
+        content: "Contenido invalido",
+        ephemeral: true,
+      });
+
+      return;
+    }
+
+    let nuevosDatos: DatosComandoPersonalizado[] = [];
+
+    try {
+      nuevosDatos = this.listaDeComandosAObjeto(comandosPersonalizadosString);
+      this.api.comandosPersonalizados.actualizar(nuevosDatos);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  private static listaDeComandosAObjeto(
+    listaDeComandos: string,
+  ): DatosComandoPersonalizado[] {
+    const listaDeComandosSeparados = listaDeComandos.split("[Comando]\n");
+
+    const comandosPersonalizados: DatosComandoPersonalizado[] = [];
+
+    listaDeComandosSeparados.forEach((comandoString, i) => {
+      if (i == 0) return;
+
+      comandoString = comandoString.replace("Palabra clave: ", "");
+      comandoString = comandoString.replace("Contenido: ", "");
+      comandoString = comandoString.replace("Autor: ", "");
+
+      const partesComandoString = comandoString.split("\n");
+      comandosPersonalizados.push({
+        palabraClave: partesComandoString[0],
+        contenido: partesComandoString[1],
+        autor: partesComandoString[2],
+      });
+    });
+
+    return comandosPersonalizados;
   }
 }
 
