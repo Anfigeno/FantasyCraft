@@ -19,9 +19,9 @@ import {
   DatosComandoPersonalizado,
   DatosEmbeds,
   DatosMensajesDelSistema,
+  DatosRolesDeAdministracion,
   DatosTickets,
 } from "@lib/Fantasy";
-import comandos from "src/comandos";
 
 export default class PanelDeControl extends AccionesBase {
   private static async crearEmbedRestumen(): Promise<EmbedBuilder> {
@@ -124,6 +124,7 @@ export default class PanelDeControl extends AccionesBase {
       OpcionMensajesDelSistema.opcion,
       OpcionCanalesImportantes.opcion,
       OpcionComandosPersonalizados.opcion,
+      OpcionRolesDeAdministracion.opcion,
     ];
 
     const listaDeOpciones =
@@ -164,6 +165,7 @@ export default class PanelDeControl extends AccionesBase {
       OpcionMensajesDelSistema.mostrarModalRecolector(interaccion);
       OpcionCanalesImportantes.mostrarModalRecolector(interaccion);
       OpcionComandosPersonalizados.mostrarModalRecolector(interaccion);
+      OpcionRolesDeAdministracion.mostrarModalRecolector(interaccion);
       //
     } else if (interaccion.isModalSubmit()) {
       //
@@ -173,6 +175,7 @@ export default class PanelDeControl extends AccionesBase {
         OpcionMensajesDelSistema.actualizarInformacion(interaccion);
         OpcionCanalesImportantes.actualizarInformacion(interaccion);
         OpcionComandosPersonalizados.actualizarInformacion(interaccion);
+        OpcionRolesDeAdministracion.actualizarInformacion(interaccion);
       } catch (error) {
         this.log.error(error);
 
@@ -193,6 +196,69 @@ export default class PanelDeControl extends AccionesBase {
       });
 
       await mensajeDeConfirmacion.delete();
+    }
+  }
+}
+
+class OpcionRolesDeAdministracion extends AccionesBase {
+  public static opcion = new StringSelectMenuOptionBuilder()
+    .setEmoji("👮")
+    .setLabel("Actualizar roles de administracion")
+    .setValue("roles-de-administracion");
+
+  public static async mostrarModalRecolector(
+    interaccion: StringSelectMenuInteraction,
+  ): Promise<void> {
+    if (interaccion.customId !== "panel-de-control-opciones") return;
+    if (interaccion.values[0] !== "roles-de-administracion") return;
+
+    const { rolesDeAdministracion } = this.api;
+    await rolesDeAdministracion.obtener();
+
+    const campos: TextInputBuilder[] = [
+      new TextInputBuilder()
+        .setValue(`${rolesDeAdministracion.idAdministrador}`)
+        .setLabel("ID del rol Administrador")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setCustomId("id-administrador"),
+      new TextInputBuilder()
+        .setValue(`${rolesDeAdministracion.idStaff}`)
+        .setLabel("ID del rol Staff")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setCustomId("id-staff"),
+    ];
+
+    const modal = new ModalBuilder()
+      .setCustomId("modal-actualizar-roles-de-administracion")
+      .setTitle("👮 Actualizar roles de administración")
+      .setComponents(
+        campos.map((campo) =>
+          new ActionRowBuilder<TextInputBuilder>().setComponents(campo),
+        ),
+      );
+
+    await interaccion.showModal(modal);
+  }
+
+  public static async actualizarInformacion(
+    interaccion: ModalSubmitInteraction,
+  ): Promise<void> {
+    if (interaccion.customId !== "modal-actualizar-roles-de-administracion")
+      return;
+
+    const { fields: campos } = interaccion;
+
+    const nuevosDatos: DatosRolesDeAdministracion = {
+      idAdministrador: campos.getTextInputValue("id-administrador"),
+      idStaff: campos.getTextInputValue("id-staff"),
+    };
+
+    try {
+      await this.api.rolesDeAdministracion.actualizar(nuevosDatos);
+    } catch (error) {
+      throw error;
     }
   }
 }
