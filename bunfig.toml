@@ -1,0 +1,4 @@
+preload = ["@danielx/civet/bun-civet"]
+
+[run]
+bun = true
