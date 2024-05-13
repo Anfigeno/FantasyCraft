@@ -37,6 +37,7 @@ export default class PanelDeTickets < AccionesBase
         new StringSelectMenuBuilder()
           .setOptions [
             OpcionDudas.opcion
+            OpcionBugs.opcion
           ]
           .setCustomId "panel-de-tickets-opciones"
       )
@@ -58,11 +59,13 @@ export default class PanelDeTickets < AccionesBase
       //
     else if interaccion.isStringSelectMenu()
       //
-      await OpcionDudas.crearModalRecolector interaccion
+      await OpcionDudas.mostrarModalRecolector interaccion
+      await OpcionBugs.mostrarModalRecolector interaccion
       //
     else if interaccion.isModalSubmit()
       //
       await OpcionDudas.crearTicket interaccion
+      await OpcionBugs.crearTicket interaccion
   
 
 
@@ -72,7 +75,7 @@ class OpcionDudas < AccionesBase
     .setEmoji "🤔"
     .setValue "dudas"
 
-  @ async crearModalRecolector(interaccion: StringSelectMenuInteraction): Promise<void>
+  @ async mostrarModalRecolector(interaccion: StringSelectMenuInteraction): Promise<void>
     if interaccion.customId is not "panel-de-tickets-opciones" return
     if interaccion.values[0] is not "dudas" return
   
@@ -116,6 +119,82 @@ class OpcionDudas < AccionesBase
         ,
         name: "Dudas"
         value: datos.duda
+          .split "\n"
+          .map (linea) => `> ${linea}`
+          .join "\n"
+      ]
+
+    { rolesDeAdministracion } := @api
+    await rolesDeAdministracion.obtener()
+
+    await canalTicket.send
+      content: `${usuario} - <@&${rolesDeAdministracion.idAdministrador}>`
+      embeds: [ embed ]
+      components: [ Tickets.crearControlesDeTicketAbierto() ]
+
+    await interaccion.reply
+      content: `Ticket creado en ${canalTicket}`
+      ephemeral: true
+
+class OpcionBugs < AccionesBase
+  @opcion := new StringSelectMenuOptionBuilder()
+    .setLabel "Bugs"
+    .setEmoji "🐛"
+    .setValue "bugs"
+
+  public @ async mostrarModalRecolector(interaccion: StringSelectMenuInteraction): Promise<void>
+    if (
+      interaccion.customId is not "panel-de-tickets-opciones"
+      or interaccion.values[0] is not "bugs" 
+    ) return
+
+    campos: TextInputBuilder[] := [
+      new TextInputBuilder()
+        .setLabel "Tipo de bug"
+        .setStyle TextInputStyle.Short
+        .setRequired true
+        .setCustomId "tipo"
+      new TextInputBuilder()
+        .setLabel "Descripción del bug"
+        .setStyle TextInputStyle.Paragraph
+        .setRequired true
+        .setCustomId "descripcion"
+    ]
+
+    modal := new ModalBuilder()
+      .setCustomId "panel-de-tickets-modal-bugs"
+      .setTitle "🐛 Crear ticket de bugs"
+      .setComponents campos.map (campo) =>
+        new ActionRowBuilder<TextInputBuilder>().setComponents campo
+    
+    await interaccion.showModal modal
+  
+  public @ async crearTicket(interaccion: ModalSubmitInteraction): Promise<void>
+    if interaccion.customId is not "panel-de-tickets-modal-bugs" return
+
+    canalTicket := await Tickets.nuevo interaccion, "🐛-bugs"
+    if canalTicket is null
+      await interaccion.reply
+        content: "Ocurrió un error al ejecutar esta interacción"
+        ephemeral: true
+
+      return
+
+    { fields: campos, user: usuario } := interaccion
+    
+    datos :=
+      tipo: campos.getTextInputValue "tipo"
+      descripcion: campos.getTextInputValue "descripcion"
+    
+    embed := await @crearEmbedEstilizado()
+    embed
+      .setTitle "🐛 Ticket de bugs"
+      .setFields [
+        name: "Tipo de bug"
+        value: datos.tipo
+        ,
+        name: "Descripción del bug"
+        value: datos.descripcion
           .split "\n"
           .map (linea) => `> ${linea}`
           .join "\n"
