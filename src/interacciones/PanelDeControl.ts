@@ -169,6 +169,7 @@ export default class PanelDeControl extends AccionesBase {
       //
     } else if (interaccion.isModalSubmit()) {
       //
+      if (!interaccion.customId.startsWith("modal-actualizar")) return
       try {
         OpcionEmbeds.actualizarInformacion(interaccion);
         OpcionTickets.actualizarInformacion(interaccion);
