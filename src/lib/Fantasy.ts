@@ -237,6 +237,30 @@ class ComandosPersonalizados
       );
     }
   }
+
+  public async obtenerComando(
+    palabraClave: string,
+  ): Promise<DatosComandoPersonalizado> {
+    const respuesta = await fetch(`${this.ruta}/${palabraClave}`, {
+      method: "GET",
+      headers: this.headers,
+    });
+
+    if (!respuesta.ok) {
+      const error = JSON.stringify(await respuesta.json());
+      throw new Error(
+        `Error al obtener el comando personalizado ${palabraClave}: ${error}`,
+      );
+    }
+
+    const datos: DatosComandoPersonalizadoApi = await respuesta.json();
+
+    return {
+      palabraClave: datos.palabra_clave,
+      contenido: datos.contenido,
+      autor: datos.autor,
+    };
+  }
 }
 
 class Embeds extends ConstructorApi implements ManejadorDeTablas, DatosEmbeds {
