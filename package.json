@@ -17,5 +17,8 @@
   "dependencies": {
     "discord.js": "^14.15.2",
     "pino": "^9.0.0"
+  },
+  "devDependencies": {
+    "@danielx/civet": "^0.7.9"
   }
 }
