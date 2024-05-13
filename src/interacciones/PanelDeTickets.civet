@@ -1,0 +1,189 @@
+import AccionesBase from "@lib/AccionesBase";
+import { 
+  Interaction,
+  CommandInteraction,
+  EmbedBuilder,
+  StringSelectMenuOptionBuilder,
+  StringSelectMenuInteraction,
+  StringSelectMenuBuilder,
+  ModalSubmitInteraction,
+  TextInputBuilder,
+  TextInputStyle,
+  ModalBuilder,
+  ActionRowBuilder,
+  GuildMember,
+  GuildTextBasedChannel,
+  PermissionFlagsBits,
+  ButtonBuilder,
+  ButtonStyle
+} from "discord.js";
+
+export default class PanelDeTickets < AccionesBase 
+  private @ async crearEmbedResumen(miniatura: string): Promise<EmbedBuilder>
+    embed := await this.crearEmbedEstilizado()
+    embed
+      .setTitle "Tickets | FantasyCraft"
+      .setDescription """
+        Bienvenido al soporte de FantasyCraft.
+        Selecciona la categoría que más se adecúe con tu necesidad y crearemos un ticket por ti.
+
+        > De esta forma podrás ponerte en contacto con uno de nuestos miembros del equipo y así tratar de ayudarte a solucionar tu problema
+        """
+      .setThumbnail miniatura
+
+  private @ listaDeOpciones(): ActionRowBuilder<StringSelectMenuBuilder>
+    new ActionRowBuilder<StringSelectMenuBuilder>()
+      .setComponents(
+        new StringSelectMenuBuilder()
+          .setOptions [
+            OpcionDudas.opcion
+          ]
+          .setCustomId "panel-de-tickets-opciones"
+      )
+  
+  private @ async crearPanelDeTickets(interaccion: CommandInteraction): Promise<void>
+    if interaccion.commandName is not "panel-de-tickets" return
+    if not @esAdmin interaccion.member as GuildMember return
+
+    avatarBot := interaccion.client.user.avatarURL()
+
+    await interaccion.reply
+      embeds: [ await @crearEmbedResumen avatarBot ]
+      components: [ @listaDeOpciones() ]
+
+  public @ async manejarInteraccion(interaccion: Interaction): Promise<void>
+    if interaccion.isCommand()
+      //
+      await @crearPanelDeTickets interaccion
+      //
+    else if interaccion.isStringSelectMenu()
+      //
+      await OpcionDudas.crearModalRecolector interaccion
+      //
+    else if interaccion.isModalSubmit()
+      //
+      await OpcionDudas.crearTicket interaccion
+  
+
+
+class OpcionDudas < AccionesBase
+  @opcion = new StringSelectMenuOptionBuilder()
+    .setLabel "Dudas"
+    .setEmoji "🤔"
+    .setValue "dudas"
+
+  @ async crearModalRecolector(interaccion: StringSelectMenuInteraction): Promise<void>
+    if interaccion.customId is not "panel-de-tickets-opciones" return
+    if interaccion.values[0] is not "dudas" return
+  
+    campos: TextInputBuilder[] := [
+      new TextInputBuilder()
+        .setLabel "Cuál es tu duda?"
+        .setStyle TextInputStyle.Paragraph
+        .setRequired true
+        .setCustomId "dudas"
+    ]
+
+    modal := new ModalBuilder()
+      .setCustomId "panel-de-tickets-modal-dudas"
+      .setTitle "🤔 Crear ticket de dudas"
+      .setComponents campos.map (campo) =>
+        new ActionRowBuilder<TextInputBuilder>().setComponents campo
+
+    await interaccion.showModal modal
+  
+  @ async crearTicket(interaccion: ModalSubmitInteraction): Promise<void>
+    if interaccion.customId is not "panel-de-tickets-modal-dudas" return
+
+    { fields: campos, user: usuario } := interaccion
+    datos :=
+      duda: campos.getTextInputValue "dudas"
+
+    canalTicket := await Tickets.nuevo interaccion, "🤔-dudas"
+    if canalTicket is null
+      await interaccion.reply
+        content: "Ocurrió un error al ejecutar esta interacción"
+        ephemeral: true
+      
+      return
+
+    embed := await @crearEmbedEstilizado()
+    embed
+      .setTitle "🤔 Ticket de dudas"
+      .setFields [
+        name: "Creador del ticket"
+        value: `> ${usuario.username}`
+        ,
+        name: "Dudas"
+        value: datos.duda
+          .split "\n"
+          .map (linea) => `> ${linea}`
+          .join "\n"
+      ]
+
+    { rolesDeAdministracion } := @api
+    await rolesDeAdministracion.obtener()
+
+    await canalTicket.send
+      content: `${usuario} - <@&${rolesDeAdministracion.idAdministrador}>`
+      embeds: [ embed ]
+      components: [ Tickets.crearControlesDeTicketAbierto() ]
+
+    await interaccion.reply
+      content: `Ticket creado en ${canalTicket}`
+      ephemeral: true
+
+class Tickets < AccionesBase
+  public @ async nuevo(interaccion: Interaction, tipo: string): Promise<GuildTextBasedChannel | null>
+    { tickets } := @api
+    await tickets.obtener()
+
+    { guild: servidor, user: usuario } := interaccion
+
+    try {
+      await servidor.channels.create 
+        name: `${tipo}-${usuario.username}`
+        parent: tickets.idCategoria
+        permissionOverwrites: [
+          id: servidor.roles.everyone
+          deny: [ PermissionFlagsBits.ViewChannel ]
+          ,
+          id: usuario.id
+          allow: [ PermissionFlagsBits.ViewChannel ]
+        ]
+    } catch error {
+      this.log.error `Error al crear un ticket de ${tipo}: ${error}`
+      return null
+    }
+
+  public @ crearControlesDeTicketAbierto(): ActionRowBuilder<ButtonBuilder>
+    botones: ButtonBuilder[] := [
+      new ButtonBuilder()
+        .setStyle ButtonStyle.Primary
+        .setEmoji "📢"
+        .setLabel "Publicar ticket"
+        .setCustomId "boton-publicar"
+      new ButtonBuilder()
+        .setStyle ButtonStyle.Secondary
+        .setEmoji "❌"
+        .setLabel "Cerrar ticket"
+        .setCustomId "boton-cerrar"
+    ]
+    
+    new ActionRowBuilder<ButtonBuilder>().setComponents botones
+  
+  public @ crearControlesDeTicketCerrado(): ActionRowBuilder<ButtonBuilder>
+    botones: ButtonBuilder[] := [
+      new ButtonBuilder()
+        .setStyle ButtonStyle.Danger
+        .setEmoji "🗑"
+        .setLabel "Elimnar ticket"
+        .setCustomId "boton-eliminar"
+      new ButtonBuilder()
+        .setStyle ButtonStyle.Primary
+        .setEmoji "📖"
+        .setLabel "Reabrir ticket"
+        .setCustomId "boton-reabrir"
+    ]
+
+    new ActionRowBuilder<ButtonBuilder>().setComponents botones

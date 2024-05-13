@@ -2,6 +2,7 @@ import { Client, GatewayIntentBits } from "discord.js";
 import pino from "pino";
 import Util from "./lib/Util";
 import PanelDeControl from "./interacciones/PanelDeControl";
+import PanelDeTickets from "./interacciones/PanelDeTickets.civet"
 import ComandoPersonalizado from "@eventos/ComandoPersonalizado";
 
 const log = pino();
@@ -23,6 +24,7 @@ cliente.login(token);
 
 cliente.on("interactionCreate", (interaccion) => {
   PanelDeControl.manejarInteraccion(interaccion);
+  PanelDeTickets.manejarInteraccion(interaccion);
 });
 
 cliente.on("messageCreate", (mensaje) => {
