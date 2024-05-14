@@ -15,7 +15,8 @@ import {
   GuildTextBasedChannel,
   PermissionFlagsBits,
   ButtonBuilder,
-  ButtonStyle
+  ButtonStyle,
+  ButtonInteraction
 } from "discord.js";
 
 export default class PanelDeTickets < AccionesBase 
@@ -75,7 +76,13 @@ export default class PanelDeTickets < AccionesBase
       await OpcionApelacion.crearTicket interaccion
       await OpcionDonacion.crearTicket interaccion
       await OpcionOtros.crearTicket interaccion
-  
+      //
+    else if interaccion.isButton()
+      //
+      await Tickets.cerrarTicket interaccion
+      await Tickets.reabrirTicket interaccion
+      await Tickets.publicarTicket interaccion
+      await Tickets.eliminarTicket interaccion
 
 
 class OpcionDudas < AccionesBase
@@ -484,7 +491,7 @@ class Tickets < AccionesBase
       new ButtonBuilder()
         .setStyle ButtonStyle.Danger
         .setEmoji "🗑"
-        .setLabel "Elimnar ticket"
+        .setLabel "Eliminar ticket"
         .setCustomId "boton-eliminar"
       new ButtonBuilder()
         .setStyle ButtonStyle.Primary
@@ -494,3 +501,112 @@ class Tickets < AccionesBase
     ]
 
     new ActionRowBuilder<ButtonBuilder>().setComponents botones
+
+  public @ async cerrarTicket(interaccion: ButtonInteraction): Promise<void>
+    if interaccion.customId is not "boton-cerrar" return
+
+    { channel: canal, message: mensaje } := interaccion
+
+    idRolEveryone: string := interaccion.guild.roles.everyone.id
+    canalEstaAbierto: boolean := canal
+      .permissionsFor idRolEveryone
+      .has PermissionFlagsBits.SendMessages
+
+    if not canalEstaAbierto
+      await interaccion.reply
+        content: "El canal ya está cerrado"
+        ephemeral: true
+
+      return
+
+    await canal
+      .permissionOverwrites
+      .edit idRolEveryone,
+        SendMessages: false
+
+    await mensaje.edit
+      components: [ @crearControlesDeTicketCerrado() ]
+
+    await interaccion.reply
+      content: "Ticket cerrado!"
+      ephemeral: true
+
+  public @ async reabrirTicket(interaccion: ButtonInteraction): Promise<void>
+    if interaccion.customId is not "boton-reabrir" return
+
+    { channel: canal, message: mensaje } := interaccion
+
+    idRolEveryone: string := interaccion.guild.roles.everyone.id
+    canalEstaAbierto: boolean := canal
+      .permissionsFor idRolEveryone
+      .has PermissionFlagsBits.SendMessages
+    
+    if canalEstaAbierto
+      await interaccion.reply
+        content: "El canal ya está abierto"
+        ephemeral: true
+      
+      return
+
+    await canal
+      .permissionOverwrites
+      .edit idRolEveryone,
+        SendMessages: true
+
+    await mensaje.edit
+      components: [ @crearControlesDeTicketAbierto() ]
+
+    await interaccion.reply
+      content: "Ticket reabierto!"
+      ephemeral: true
+    
+  public @ async publicarTicket(interaccion: ButtonInteraction): Promise<void>
+    if interaccion.customId is not "boton-publicar" return
+
+    { channel: canal, message: mensaje } := interaccion
+    { rolesDeAdministracion } := @api
+
+    await rolesDeAdministracion.obtener()
+    if not rolesDeAdministracion.idStaff
+      await interaccion.reply
+        content: "Ocurrió un error al ejecutar esta interacción"
+        ephemeral: true
+      
+      return
+
+    canalEstaPublicado: boolean := canal
+      .permissionsFor rolesDeAdministracion.idStaff
+      .has PermissionFlagsBits.ViewChannel
+
+    if canalEstaPublicado
+      await interaccion.reply
+        content: "El canal ya estaba publicado"
+        ephemeral: true
+
+      return
+
+    await canal
+      .permissionOverwrites
+      .edit rolesDeAdministracion.idStaff,
+        ViewChannel: true
+
+    await interaccion.reply
+      content: "El canal ha sido publicado!"
+      ephemeral: true
+
+  public @ async eliminarTicket(interaccion: ButtonInteraction): Promise<void>
+    if interaccion.customId is not "boton-eliminar" return
+
+    { channel: canal, message: mensaje, member: miembro } := interaccion
+
+    if not @esAdmin miembro as GuildMember
+      await interaccion.reply
+        content: "No tienes permisos para ejecutar esta interacción"
+        ephemeral: true
+
+      return
+
+    await interaccion.reply
+      content: "Eliminando este ticket..."
+      
+    setTimeout => await canal.delete(), 5000
