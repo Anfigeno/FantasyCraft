@@ -40,6 +40,7 @@ export default class PanelDeTickets < AccionesBase
             OpcionBugs.opcion
             OpcionApelacion.opcion
             OpcionDonacion.opcion
+            OpcionOtros.opcion
           ]
           .setCustomId "panel-de-tickets-opciones"
       )
@@ -65,6 +66,7 @@ export default class PanelDeTickets < AccionesBase
       await OpcionBugs.mostrarModalRecolector interaccion
       await OpcionApelacion.mostrarModalRecolector interaccion
       await OpcionDonacion.mostrarModalRecolector interaccion
+      await OpcionOtros.mostrarModalRecolector interaccion
       //
     else if interaccion.isModalSubmit()
       //
@@ -72,6 +74,7 @@ export default class PanelDeTickets < AccionesBase
       await OpcionBugs.crearTicket interaccion
       await OpcionApelacion.crearTicket interaccion
       await OpcionDonacion.crearTicket interaccion
+      await OpcionOtros.crearTicket interaccion
   
 
 
@@ -356,6 +359,73 @@ class OpcionDonacion < AccionesBase
       ,
         name: "Monto de la donación"
         value: `> ${datos.monto}`
+      ]
+
+    { rolesDeAdministracion } := @api
+    await rolesDeAdministracion.obtener()
+
+    await canalTicket.send
+      content: `${usuario} - <@&${rolesDeAdministracion.idAdministrador}>`
+      embeds: [ embed ]
+      components: [ Tickets.crearControlesDeTicketAbierto() ]
+
+    await interaccion.reply
+      content: `Ticket creado en ${canalTicket}`
+      ephemeral: true
+
+class OpcionOtros < AccionesBase
+  @opcion := new StringSelectMenuOptionBuilder()
+    .setLabel "Otros"
+    .setEmoji "❓"
+    .setValue "otros"
+
+  public @ async mostrarModalRecolector(interaccion: StringSelectMenuInteraction): Promise<void>
+    if (
+      interaccion.customId is not "panel-de-tickets-opciones"
+      or interaccion.values[0] is not "otros" 
+    ) return
+
+    campos: TextInputBuilder[] := [
+      new TextInputBuilder()
+        .setLabel "Razón"
+        .setStyle TextInputStyle.Paragraph
+        .setRequired true
+        .setCustomId "razon"
+    ]
+
+    modal := new ModalBuilder()
+      .setCustomId "panel-de-tickets-modal-otros"
+      .setTitle "❓ Crear ticket"
+      .setComponents campos.map (campo) =>
+        new ActionRowBuilder<TextInputBuilder>().setComponents campo
+    
+    await interaccion.showModal modal
+  
+  public @ async crearTicket(interaccion: ModalSubmitInteraction): Promise<void>
+    if interaccion.customId is not "panel-de-tickets-modal-otros" return
+
+    canalTicket := await Tickets.nuevo interaccion, "❓-otros"
+    if canalTicket is null
+      await interaccion.reply
+        content: "Ocurrió un error al ejecutar esta interacción"
+        ephemeral: true
+
+      return
+
+    { fields: campos, user: usuario } := interaccion
+    
+    datos :=
+      razon: campos.getTextInputValue "razon"
+    
+    embed := await @crearEmbedEstilizado()
+    embed
+      .setTitle "❓ Ticket"
+      .setFields [
+        name: "Razón"
+        value: datos.razon
+          .split "\n"
+          .map (linea) => `> ${linea}`
+          .join "\n"
       ]
 
     { rolesDeAdministracion } := @api
