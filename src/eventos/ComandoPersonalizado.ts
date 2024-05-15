@@ -1,4 +1,4 @@
-import AccionesBase from "@lib/AccionesBase";
+import AccionesBase from "@lib/AccionesBase.civet";
 import { Message } from "discord.js";
 
 export default class ComandoPersonalizado extends AccionesBase {

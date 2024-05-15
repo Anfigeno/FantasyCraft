@@ -13,7 +13,7 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from "discord.js";
-import AccionesBase from "@lib/AccionesBase";
+import AccionesBase from "@lib/AccionesBase.civet";
 import {
   DatosCanalesImportantes,
   DatosComandoPersonalizado,

@@ -1,0 +1,30 @@
+import { ColorResolvable, EmbedBuilder, GuildMember } from "discord.js";
+import Fantasy from "./Fantasy";
+import Util from "./Util";
+import pino from "pino";
+
+export default class AccionesBase 
+  private @ tokenApi = Util.Env "TOKEN_API"
+  public @ api = new Fantasy this.tokenApi
+  public @ log = pino()
+
+  public @ async crearEmbedEstilizado(): Promise<EmbedBuilder>
+    { embeds } := @api;
+    await embeds.obtener()
+
+    embed := new EmbedBuilder()
+
+    try
+      embed.setColor embeds.color as ColorResolvable
+    catch error
+      this.log.error `Error al establecer el color a un embed: ${error}`
+
+    try
+      embed.setImage embeds.urlImagenLimitadora
+    catch error
+      this.log.error `Error al establecer la imagen limitadora de un embed: ${error}`
+
+    return embed
+
+  public static esAdmin(usuario: GuildMember): boolean 
+    return usuario.permissions.has "Administrator"
