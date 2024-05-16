@@ -34,8 +34,6 @@ export default class Sugerencias < AccionesBase
       .slice 1
       .join "\n"
 
-    @log.info descripcion
-
     embed
       .setTitle
         if titulo.length > tamañoLimiteDelTitulo
