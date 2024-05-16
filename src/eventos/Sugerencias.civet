@@ -1,0 +1,64 @@
+import AccionesBase from "@lib/AccionesBase.civet"
+import {
+  Message
+  GuildTextBasedChannel
+  Guild
+} from "discord.js"
+
+export default class Sugerencias < AccionesBase
+  public @ crearEmbedDeSugerencia(mensaje: Message): Promise<void>
+    { canalesImportantes } := @api
+    await canalesImportantes.obtener()
+
+    if (
+      mensaje.channel.id is not canalesImportantes.idSugerencias
+      or mensaje.author.bot
+    ) return
+        
+    { 
+      member: miembro
+      content: contenido
+      attachments: adjuntos
+      channel: canal
+    } := mensaje
+
+    embed := @crearEmbedEstilizado() |> await |>
+      .setAuthor
+        name: miembro.user.username
+        iconURL: miembro.user.avatarURL()
+    
+    tamañoLimiteDelTitulo := 50
+    parrafos := contenido.split("\n")
+    titulo := parrafos[0]
+    descripcion := parrafos
+      .slice 1
+      .join "\n"
+
+    @log.info descripcion
+
+    embed
+      .setTitle
+        if titulo.length > tamañoLimiteDelTitulo
+          contenido.slice 0, tamañoLimiteDelTitulo - contenido.length
+        else
+          titulo
+      .setDescription
+        if descripcion.length > 0
+          descripcion
+        else
+          if contenido.length > tamañoLimiteDelTitulo
+            contenido.slice tamañoLimiteDelTitulo
+          else
+            contenido
+
+    try
+      embed.setThumbnail adjuntos.first().url
+    catch error
+      @log.warn "Sugerencia creada sin imágen"
+
+    mensajeSugerencia := await canal.send embeds: [ embed ]
+    mensajeSugerencia
+      ||> .react "👍"
+      ||> .react "👎"
+
+    await mensaje.delete()

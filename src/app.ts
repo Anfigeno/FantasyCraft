@@ -4,6 +4,7 @@ import Util from "./lib/Util";
 import PanelDeControl from "./interacciones/PanelDeControl";
 import PanelDeTickets from "./interacciones/PanelDeTickets.civet"
 import ComandoPersonalizado from "@eventos/ComandoPersonalizado";
+import Sugerencias from "@eventos/Sugerencias.civet";
 
 const log = pino();
 const cliente = new Client({
@@ -29,4 +30,5 @@ cliente.on("interactionCreate", (interaccion) => {
 
 cliente.on("messageCreate", (mensaje) => {
   ComandoPersonalizado.manejarMensaje(mensaje);
+  Sugerencias.crearEmbedDeSugerencia(mensaje);
 });

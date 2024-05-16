@@ -1,4 +1,10 @@
-import { ColorResolvable, EmbedBuilder, GuildMember } from "discord.js";
+import { 
+  ColorResolvable
+  EmbedBuilder
+  Guild
+  GuildMember
+  GuildBasedChannel
+} from "discord.js";
 import Fantasy from "./Fantasy";
 import Util from "./Util";
 import pino from "pino";
@@ -26,5 +32,12 @@ export default class AccionesBase
 
     return embed
 
-  public static esAdmin(usuario: GuildMember): boolean 
+  public @ esAdmin(usuario: GuildMember): boolean 
     return usuario.permissions.has "Administrator"
+
+  public @ obtenerCanal(id: string, servidor: Guild): Promise<GuildBasedChannel>
+    canal := await servidor.channels.fetch id
+    if not canal
+      throw new Error `El canal de id ${id} no existe`
+    
+    canal
