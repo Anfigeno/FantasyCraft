@@ -139,6 +139,7 @@ class CanalesImportantes
   public idGeneral: string | null;
   public idSugerencias: string | null;
   public idVotaciones: string | null;
+  public idBienvenidas: string;
 
   public ruta = `${this.urlApi}/canales_importantes`;
 
@@ -158,6 +159,7 @@ class CanalesImportantes
     this.idGeneral = datos.id_general;
     this.idSugerencias = datos.id_sugerencias;
     this.idVotaciones = datos.id_votaciones;
+    this.idBienvenidas = datos.id_bienvenidas;
   }
 
   public async actualizar(nuevosDatos: DatosCanalesImportantes): Promise<void> {
@@ -165,6 +167,7 @@ class CanalesImportantes
       id_general: nuevosDatos.idGeneral,
       id_sugerencias: nuevosDatos.idSugerencias,
       id_votaciones: nuevosDatos.idVotaciones,
+      id_bienvenidas: nuevosDatos.idBienvenidas,
     };
 
     nuevosDatosApi = formatearClavesNulas(nuevosDatosApi);
@@ -384,12 +387,14 @@ export interface DatosCanalesImportantes {
   idGeneral: string | null;
   idVotaciones: string | null;
   idSugerencias: string | null;
+  idBienvenidas: string | null;
 }
 
 interface DatosCanalesImportantesApi {
   id_general?: string | null;
   id_sugerencias?: string | null;
   id_votaciones?: string | null;
+  id_bienvenidas?: string | null;
 }
 
 export interface DatosComandoPersonalizado {

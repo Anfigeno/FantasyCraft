@@ -71,7 +71,11 @@ export default class PanelDeControl extends AccionesBase {
           "\n" +
           (canalesImportantes.idSugerencias
             ? `> Sugerencias: <#${canalesImportantes.idSugerencias}>`
-            : "> Sugerencias: No definido"),
+            : "> Sugerencias: No definido") +
+          "\n" +
+          (canalesImportantes.idBienvenidas
+            ? `> Bienvenidas: <#${canalesImportantes.idBienvenidas}>`
+            : "> Bienvenidas: No definido"),
       },
       {
         name: "🤖 Comandos personalizados",
@@ -411,6 +415,13 @@ class OpcionCanalesImportantes extends AccionesBase {
         .setRequired(true)
         .setMaxLength(20)
         .setCustomId("id-sugerencias"),
+      new TextInputBuilder()
+        .setValue(`${canalesImportantes.idBienvenidas}`)
+        .setLabel("ID del canal de bienvenidas")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setMaxLength(20)
+        .setCustomId("id-bienvenidas"),
     ];
 
     const modal = new ModalBuilder()
@@ -436,6 +447,7 @@ class OpcionCanalesImportantes extends AccionesBase {
       idGeneral: campos.getTextInputValue("id-general"),
       idVotaciones: campos.getTextInputValue("id-votaciones"),
       idSugerencias: campos.getTextInputValue("id-sugerencias"),
+      idBienvenidas: campos.getTextInputValue("id-bienvenidas"),
     };
 
     try {
