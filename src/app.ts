@@ -5,6 +5,7 @@ import PanelDeControl from "./interacciones/PanelDeControl";
 import PanelDeTickets from "./interacciones/PanelDeTickets.civet"
 import ComandoPersonalizado from "@eventos/ComandoPersonalizado";
 import Sugerencias from "@eventos/Sugerencias.civet";
+import NuevoUsuario from "@eventos/NuevoUsuario.civet";
 
 const log = pino();
 const cliente = new Client({
@@ -32,3 +33,7 @@ cliente.on("messageCreate", (mensaje) => {
   ComandoPersonalizado.manejarMensaje(mensaje);
   Sugerencias.crearEmbedDeSugerencia(mensaje);
 });
+
+cliente.on("guildMemberAdd", (mensaje) => {
+  NuevoUsuario.darleLaBienvenida(mensaje);
+})
