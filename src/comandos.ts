@@ -7,8 +7,12 @@ const comandos: RequestData["body"] = [
   },
   {
     name: "panel-de-tickets",
-    description: "Crea el panel de tickets"
-  }
+    description: "Crea el panel de tickets",
+  },
+  {
+    name: "encuestas",
+    description: "Crea una encuesta",
+  },
 ];
 
 export default comandos;
