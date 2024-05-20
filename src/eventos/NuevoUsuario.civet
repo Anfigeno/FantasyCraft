@@ -1,4 +1,4 @@
-AccionesBase from "@lib/AccionesBase.civet"
+AccionesBase from "@lib/AccionesBase"
 { GuildMember } from "discord.js"
 
 export default class NuevoUsuario < AccionesBase

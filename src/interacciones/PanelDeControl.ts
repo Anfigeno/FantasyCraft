@@ -13,7 +13,7 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from "discord.js";
-import AccionesBase from "@lib/AccionesBase.civet";
+import AccionesBase from "@lib/AccionesBase";
 import {
   DatosCanalesImportantes,
   DatosComandoPersonalizado,
@@ -173,7 +173,7 @@ export default class PanelDeControl extends AccionesBase {
       //
     } else if (interaccion.isModalSubmit()) {
       //
-      if (!interaccion.customId.startsWith("modal-actualizar")) return
+      if (!interaccion.customId.startsWith("modal-actualizar")) return;
       try {
         OpcionEmbeds.actualizarInformacion(interaccion);
         OpcionTickets.actualizarInformacion(interaccion);
