@@ -2,16 +2,27 @@ import AccionesBase from "@lib/AccionesBase";
 import {
   ActionRowBuilder,
   CommandInteraction,
+  GuildMember,
   Interaction,
   ModalBuilder,
   ModalSubmitInteraction,
   TextInputBuilder,
   TextInputStyle,
-  parseEmoji,
 } from "discord.js";
 
 export default class Encuestas extends AccionesBase {
   public static async manejarInteraccion(interaccion: Interaction) {
+    if (!this.esAdmin(interaccion.member as GuildMember)) {
+      if (interaccion.isRepliable()) {
+        interaccion.reply({
+          content: "No tienes permisos para ejecutar esta interacción",
+          ephemeral: true,
+        });
+
+        return;
+      }
+    }
+
     if (interaccion.isCommand()) {
       await this.mostrarModalRecolector(interaccion);
     } else if (interaccion.isModalSubmit()) {
@@ -122,11 +133,10 @@ export default class Encuestas extends AccionesBase {
   }
 
   private static validarReacciones(reacciones: string[]): void {
+    const regex = /\p{Extended_Pictographic}/gu;
     reacciones.forEach((reaccion) => {
-      try {
-        parseEmoji(reaccion);
-      } catch (error) {
-        throw error;
+      if (!reaccion.match(regex)) {
+        throw new Error();
       }
     });
   }
