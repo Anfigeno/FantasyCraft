@@ -7,6 +7,7 @@ import ComandoPersonalizado from "@eventos/ComandoPersonalizado";
 import Sugerencias from "@eventos/Sugerencias.civet";
 import NuevoUsuario from "@eventos/NuevoUsuario.civet";
 import Encuestas from "./interacciones/Encuestas";
+import MensajeIncrustado from "./interacciones/MensajeIncrustado";
 
 const log = pino();
 const cliente = new Client({
@@ -29,6 +30,7 @@ cliente.on("interactionCreate", (interaccion) => {
   PanelDeControl.manejarInteraccion(interaccion);
   PanelDeTickets.manejarInteraccion(interaccion);
   Encuestas.manejarInteraccion(interaccion);
+  MensajeIncrustado.manejarInteraccion(interaccion);
 });
 
 cliente.on("messageCreate", (mensaje) => {
