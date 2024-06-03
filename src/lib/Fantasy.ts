@@ -1,3 +1,5 @@
+import Resultado from "./Resultado";
+
 class ConstructorApi {
   protected urlApi = "http://0.0.0.0:8000/api";
   protected tokenApi = "";
@@ -19,6 +21,7 @@ export default class Fantasy extends ConstructorApi {
   public comandosPersonalizados = new ComandosPersonalizados(this.tokenApi);
   public embeds = new Embeds(this.tokenApi);
   public rolesDeAdministracion = new RolesDeAdministracion(this.tokenApi);
+  public mensajesProgramados = new MensajesProgramados(this.tokenApi);
 }
 
 function formatearClavesNulas<
@@ -27,7 +30,8 @@ function formatearClavesNulas<
     | DatosMensajesDelSistemaApi
     | DatosCanalesImportantesApi
     | DatosEmbedsApi
-    | DatosRolesDeAdministracionApi,
+    | DatosRolesDeAdministracionApi
+    | DatosMensajeProgramadoApi,
 >(objeto: T): T {
   for (const clave in objeto) {
     const elemento = objeto[clave];
@@ -361,10 +365,150 @@ class RolesDeAdministracion
   }
 }
 
+class MensajesProgramados extends ConstructorApi implements ManejadorDeTablas {
+  public ruta = `${this.urlApi}/mensajes_programados`;
+  public lista: DatosMensajeProgramado[] = [];
+
+  public async obtener(): Promise<Resultado<void>> {
+    const respuesta = await fetch(this.ruta, {
+      method: "GET",
+      headers: this.headers,
+    });
+
+    if (!respuesta.ok) {
+      const error = JSON.stringify(await respuesta.json());
+      return new Resultado(
+        undefined,
+        `Error al obtener los mensajes programados: ${error}`,
+      );
+    }
+
+    const datos: DatosMensajeProgramadoApi[] = await respuesta.json();
+
+    this.lista = datos.map((dato) => {
+      return {
+        id: dato.id,
+        titulo: dato.titulo,
+        descripcion: dato.titulo,
+        imagen: dato.imagen,
+        miniatura: dato.miniatura,
+        tiempo: dato.tiempo,
+        idCanal: dato.id_canal,
+        activo: dato.activo,
+      };
+    });
+
+    return new Resultado();
+  }
+
+  public async actualizar(
+    nuevosDatos: DatosMensajeProgramado[],
+  ): Promise<Resultado<void>> {
+    let nuevosDatosApi: DatosMensajeProgramadoApi[] = nuevosDatos.map(
+      (dato) => {
+        return {
+          id: dato.id,
+          titulo: dato.titulo,
+          descripcion: dato.descripcion,
+          imagen: dato.imagen,
+          miniatura: dato.miniatura,
+          tiempo: dato.tiempo,
+          id_canal: dato.idCanal,
+          activo: dato.activo,
+        };
+      },
+    );
+
+    nuevosDatosApi = nuevosDatosApi.map((dato) => {
+      return formatearClavesNulas(dato);
+    });
+
+    const respuesta = await fetch(this.ruta, {
+      method: "PUT",
+      headers: this.headers,
+      body: JSON.stringify(nuevosDatosApi),
+    });
+
+    if (!respuesta.ok) {
+      const error = JSON.stringify(await respuesta.json());
+      return new Resultado(
+        undefined,
+        `Error al actualizar los mensajes programados: ${error}`,
+      );
+    }
+
+    return new Resultado();
+  }
+
+  public async obtenerUno(
+    id: number,
+  ): Promise<Resultado<DatosMensajeProgramado>> {
+    const respuesta = await fetch(`${this.ruta}/${id}`, {
+      method: "GET",
+      headers: this.headers,
+    });
+
+    if (!respuesta.ok) {
+      const error = JSON.stringify(await respuesta.json());
+      return new Resultado(
+        undefined,
+        `Error al obtener el mensaje programado ${id}: ${error}`,
+      );
+    }
+
+    const datos: DatosMensajeProgramadoApi = await respuesta.json();
+    const datosFormateados: DatosMensajeProgramado = {
+      id: datos.id,
+      titulo: datos.titulo,
+      descripcion: datos.descripcion,
+      imagen: datos.imagen,
+      miniatura: datos.miniatura,
+      tiempo: datos.tiempo,
+      idCanal: datos.id_canal,
+      activo: datos.activo,
+    };
+
+    return new Resultado(datosFormateados);
+  }
+
+  public async actualizarUno(
+    nuevosDatos: DatosMensajeProgramado,
+  ): Promise<Resultado<void>> {
+    let nuevosDatosApi: DatosMensajeProgramadoApi = {
+      id: nuevosDatos.id,
+      titulo: nuevosDatos.titulo,
+      descripcion: nuevosDatos.descripcion,
+      imagen: nuevosDatos.imagen,
+      miniatura: nuevosDatos.miniatura,
+      tiempo: nuevosDatos.tiempo,
+      id_canal: nuevosDatos.idCanal,
+      activo: nuevosDatos.activo,
+    };
+
+    nuevosDatosApi = formatearClavesNulas(nuevosDatosApi);
+
+    const respuesta = await fetch(`${this.ruta}/${nuevosDatosApi.id}`, {
+      method: "PUT",
+      headers: this.headers,
+      body: JSON.stringify(nuevosDatosApi),
+    });
+
+    if (!respuesta.ok) {
+      const error = JSON.stringify(await respuesta.json());
+      return new Resultado(
+        undefined,
+        `Error al actualizar el mensaje programado ${nuevosDatos.id}: ${error}`,
+      );
+    }
+
+    return new Resultado();
+  }
+}
+
 interface ManejadorDeTablas {
   ruta: string;
-  obtener(): Promise<void>;
-  actualizar(nuevosDatos: any): Promise<void>;
+  obtener(): Promise<any>;
+  actualizar(nuevosDatos: any): Promise<any>;
 }
 
 export interface DatosTickets {
@@ -427,4 +571,26 @@ export interface DatosRolesDeAdministracion {
 interface DatosRolesDeAdministracionApi {
   id_administrador?: string | null;
   id_staff?: string | null;
+}
+
+export interface DatosMensajeProgramado {
+  id: number;
+  titulo: string;
+  descripcion: string;
+  imagen?: string;
+  miniatura?: string;
+  tiempo: string;
+  idCanal: string;
+  activo: boolean;
+}
+
+interface DatosMensajeProgramadoApi {
+  id: number | null;
+  titulo: string | null;
+  descripcion: string | null;
+  imagen: string | null;
+  miniatura: string | null;
+  tiempo: string | null;
+  id_canal: string | null;
+  activo: boolean;
 }
