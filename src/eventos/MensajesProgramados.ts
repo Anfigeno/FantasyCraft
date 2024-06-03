@@ -6,38 +6,11 @@ import { Guild } from "discord.js";
 
 export default class ProgramadorDeMensajes extends AccionesBase {
   public static async empezarReloj(servidor: Guild): Promise<void> {
-    await this.activarTodosLosMensajesProgramados();
-
     await this.programarMensajes(servidor);
 
-    setInterval(async () => {
+    setTimeout(async () => {
       await this.empezarReloj(servidor);
-    }, tiempo.minuto);
-  }
-
-  public static async activarTodosLosMensajesProgramados(): Promise<void> {
-    const { mensajesProgramados } = this.api;
-    let resultado = await mensajesProgramados.obtener();
-
-    if (resultado.error !== null) {
-      this.log.error(
-        `Error al obtener los mensajes programados: ${resultado.error}`,
-      );
-      return;
-    }
-
-    if (mensajesProgramados.lista.length === 0) {
-      this.log.info("No hay mensajes programados");
-      return;
-    }
-
-    mensajesProgramados.lista.forEach(async (mensajeProgramado) => {
-      const { error } = await this.activarMensajeProgramado(mensajeProgramado);
-
-      if (error !== null) {
-        this.log.error(error);
-      }
-    });
+    }, tiempo.dia);
   }
 
   public static async programarMensajes(servidor: Guild): Promise<void> {
@@ -114,9 +87,12 @@ export default class ProgramadorDeMensajes extends AccionesBase {
     }
 
     const diferenciaDeTiempo = this.obtenerDiferenciaDeTiempo(datos.tiempo);
+    const diferenciaDeTiempoEnHoras = Math.floor(
+      diferenciaDeTiempo / 1000 / 60 / 60,
+    );
 
     this.log.info(
-      `"${datos.titulo}" programado para ejecutarse en ${diferenciaDeTiempo / 1000 / 60 / 60} horas`,
+      `"${datos.titulo}" programado para ejecutarse en ${diferenciaDeTiempoEnHoras} horas`,
     );
 
     setTimeout(async () => {
