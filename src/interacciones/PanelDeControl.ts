@@ -18,6 +18,7 @@ import {
   DatosCanalesImportantes,
   DatosComandoPersonalizado,
   DatosEmbeds,
+  DatosMensajeProgramado,
   DatosMensajesDelSistema,
   DatosRolesDeAdministracion,
   DatosTickets,
@@ -32,6 +33,7 @@ export default class PanelDeControl extends AccionesBase {
       comandosPersonalizados,
       embeds,
       rolesDeAdministracion,
+      mensajesProgramados,
     } = this.api;
 
     try {
@@ -41,6 +43,7 @@ export default class PanelDeControl extends AccionesBase {
       await comandosPersonalizados.obtener();
       await embeds.obtener();
       await rolesDeAdministracion.obtener();
+      await mensajesProgramados.obtener();
     } catch (error) {
       throw error;
     }
@@ -109,6 +112,20 @@ export default class PanelDeControl extends AccionesBase {
             ? `> Staff: ${rolesDeAdministracion.idStaff}`
             : "> Staff: No definido"),
       },
+      {
+        name: "💬 Mensajes programados",
+        value:
+          mensajesProgramados.lista.length > 0
+            ? mensajesProgramados.lista
+                .map((mensajeProgramado) => {
+                  return `
+                    > Titulo: ${mensajeProgramado.titulo}
+                    > Activo: ${mensajeProgramado.activo}
+                  `;
+                })
+                .join("")
+            : "> Ninguno",
+      },
     ];
 
     const embed = await this.crearEmbedEstilizado();
@@ -129,6 +146,7 @@ export default class PanelDeControl extends AccionesBase {
       OpcionCanalesImportantes.opcion,
       OpcionComandosPersonalizados.opcion,
       OpcionRolesDeAdministracion.opcion,
+      OpcionMensajesProgramados.opcion,
     ];
 
     const listaDeOpciones =
@@ -170,6 +188,7 @@ export default class PanelDeControl extends AccionesBase {
       OpcionCanalesImportantes.mostrarModalRecolector(interaccion);
       OpcionComandosPersonalizados.mostrarModalRecolector(interaccion);
       OpcionRolesDeAdministracion.mostrarModalRecolector(interaccion);
+      OpcionMensajesProgramados.mostrarModalRecolector(interaccion);
       //
     } else if (interaccion.isModalSubmit()) {
       //
@@ -181,6 +200,7 @@ export default class PanelDeControl extends AccionesBase {
         OpcionCanalesImportantes.actualizarInformacion(interaccion);
         OpcionComandosPersonalizados.actualizarInformacion(interaccion);
         OpcionRolesDeAdministracion.actualizarInformacion(interaccion);
+        OpcionMensajesProgramados.actualizarInformacion(interaccion);
       } catch (error) {
         this.log.error(error);
 
@@ -632,6 +652,126 @@ class OpcionEmbeds extends AccionesBase {
 
     try {
       await embeds.actualizar(nuevosDatos);
+    } catch (error) {
+      throw error;
+    }
+  }
+}
+
+class OpcionMensajesProgramados extends AccionesBase {
+  public static opcion = new StringSelectMenuOptionBuilder()
+    .setEmoji("💬")
+    .setLabel("Actualizar mensajes programados")
+    .setValue("mensajes-programados");
+
+  public static async mostrarModalRecolector(
+    interaccion: StringSelectMenuInteraction,
+  ): Promise<void> {
+    if (interaccion.customId !== "panel-de-control-opciones") return;
+    if (interaccion.values[0] !== "mensajes-programados") return;
+
+    const { mensajesProgramados } = this.api;
+    await mensajesProgramados.obtener();
+
+    const campos: TextInputBuilder[] = [
+      new TextInputBuilder()
+        .setValue(
+          `${this.mensajesProgramadosAString(mensajesProgramados.lista)}`,
+        )
+        .setLabel("Lista de mensajes programados")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+        .setCustomId("mensajes-programados"),
+    ];
+
+    const modal = new ModalBuilder()
+      .setCustomId("modal-actualizar-mensajes-programados")
+      .setTitle("💬 Actualizar mensajes programados")
+      .setComponents(
+        campos.map((campo) =>
+          new ActionRowBuilder<TextInputBuilder>().setComponents(campo),
+        ),
+      );
+
+    await interaccion.showModal(modal);
+  }
+
+  private static mensajesProgramadosAString(
+    mensajesProgramados: DatosMensajeProgramado[],
+  ): string {
+    if (mensajesProgramados.length == 0) "null";
+
+    return mensajesProgramados
+      .map((mensajeProgramado) => {
+        return `
+          ID: ${mensajeProgramado.id}
+          Titulo: ${mensajeProgramado.titulo}
+          Descripción: ${mensajeProgramado.descripcion}
+          Imagen: ${mensajeProgramado.imagen}
+          Miniatura: ${mensajeProgramado.miniatura}
+          Tiempo: ${mensajeProgramado.tiempo}
+          ID canal: ${mensajeProgramado.idCanal}
+          Activo: ${mensajeProgramado.activo}
+        `
+          .split("\n")
+          .map((linea) => linea.trim())
+          .join("\n");
+      })
+      .join("\n\n");
+  }
+
+  private static mensajesProgramadosAObjeto(
+    listaDeMensajesProgramados: string,
+  ): DatosMensajeProgramado[] {
+    const listaDeMensajesProgramadosSeparados =
+      listaDeMensajesProgramados.split("\n\n");
+
+    const mensajesProgramados: DatosMensajeProgramado[] = [];
+
+    listaDeMensajesProgramadosSeparados.forEach((mensajeString) => {
+      if (mensajeString.length < 1) return;
+
+      mensajeString = mensajeString.replace("ID: ", "");
+      mensajeString = mensajeString.replace("Titulo: ", "");
+      mensajeString = mensajeString.replace("Descripción: ", "");
+      mensajeString = mensajeString.replace("Imagen: ", "");
+      mensajeString = mensajeString.replace("Miniatura: ", "");
+      mensajeString = mensajeString.replace("Tiempo: ", "");
+      mensajeString = mensajeString.replace("ID canal: ", "");
+      mensajeString = mensajeString.replace("Activo: ", "");
+
+      const partesMensajeString = mensajeString.split("\n");
+      mensajesProgramados.push({
+        id: Number(partesMensajeString[0]),
+        titulo: partesMensajeString[1],
+        descripcion: partesMensajeString[2],
+        imagen: partesMensajeString[3],
+        miniatura: partesMensajeString[4],
+        tiempo: partesMensajeString[5],
+        idCanal: partesMensajeString[6],
+        activo: partesMensajeString[7] === "true",
+      });
+    });
+
+    return mensajesProgramados;
+  }
+
+  public static async actualizarInformacion(
+    interaccion: ModalSubmitInteraction,
+  ): Promise<void> {
+    if (interaccion.customId !== "modal-actualizar-mensajes-programados")
+      return;
+
+    const { fields: campos } = interaccion;
+
+    try {
+      const nuevosDatos = this.mensajesProgramadosAObjeto(
+        campos.getTextInputValue("mensajes-programados"),
+      );
+
+      const { error } =
+        await this.api.mensajesProgramados.actualizar(nuevosDatos);
+      if (error) throw error;
     } catch (error) {
       throw error;
     }
