@@ -8,6 +8,8 @@ import Sugerencias from "@eventos/Sugerencias.civet";
 import NuevoUsuario from "@eventos/NuevoUsuario.civet";
 import Encuestas from "./interacciones/Encuestas";
 import MensajeIncrustado from "./interacciones/MensajeIncrustado";
+import ProgramadorDeMensajes from "@eventos/MensajesProgramados";
+import AccionesBase from "@lib/AccionesBase";
 
 const log = pino();
 const cliente = new Client({
@@ -19,8 +21,16 @@ const cliente = new Client({
   ],
 });
 
-cliente.once("ready", (cliente) => {
+cliente.once("ready", async (cliente) => {
   log.info(`Bot listo como ${cliente.user.username}`);
+
+  let resultado = await AccionesBase.obtenerServidor(cliente);
+  if (resultado.error !== null) {
+    log.error(resultado.error);
+    return;
+  }
+
+  ProgramadorDeMensajes.empezarReloj(resultado.datos);
 });
 
 const token = Util.Env("TOKEN_BOT");
