@@ -4,10 +4,12 @@ import {
   Guild,
   GuildMember,
   GuildBasedChannel,
+  Client,
 } from "discord.js";
 import Fantasy from "./Fantasy";
 import Util from "./Util";
 import pino from "pino";
+import Resultado from "./Resultado";
 
 export default class AccionesBase {
   private static tokenApi: string = Util.Env("TOKEN_API");
@@ -51,5 +53,18 @@ export default class AccionesBase {
     }
 
     return canal;
+  }
+
+  public static async obtenerServidor(
+    cliente: Client,
+  ): Promise<Resultado<Guild>> {
+    const idServidor = Util.Env("GUILD_ID");
+    const servidor = await cliente.guilds.fetch(idServidor);
+
+    if (!servidor) {
+      return new Resultado(undefined, "El servidor no existe");
+    }
+
+    return new Resultado(servidor);
   }
 }
