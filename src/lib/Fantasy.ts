@@ -22,6 +22,7 @@ export default class Fantasy extends ConstructorApi {
   public embeds = new Embeds(this.tokenApi);
   public rolesDeAdministracion = new RolesDeAdministracion(this.tokenApi);
   public mensajesProgramados = new MensajesProgramados(this.tokenApi);
+  public palabrasProhibidas = new PalabrasProhibidas(this.tokenApi);
 }
 
 function formatearClavesNulas<
@@ -31,7 +32,8 @@ function formatearClavesNulas<
     | DatosCanalesImportantesApi
     | DatosEmbedsApi
     | DatosRolesDeAdministracionApi
-    | DatosMensajeProgramadoApi,
+    | DatosMensajeProgramadoApi
+    | DatosPalabrasProhibidasApi,
 >(objeto: T): T {
   for (const clave in objeto) {
     const elemento = objeto[clave];
@@ -505,6 +507,66 @@ class MensajesProgramados extends ConstructorApi implements ManejadorDeTablas {
   }
 }
 
+class PalabrasProhibidas
+  extends ConstructorApi
+  implements ManejadorDeTablas, DatosPalabrasProhibidas
+{
+  public ruta = `${this.urlApi}/palabras_prohibidas`;
+
+  public lista: string[];
+
+  public async obtener(): Promise<Resultado<void>> {
+    const respuesta = await fetch(this.ruta, {
+      method: "GET",
+      headers: this.headers,
+    });
+
+    if (!respuesta.ok) {
+      const error = JSON.stringify(await respuesta.json());
+      return new Resultado(
+        undefined,
+        `Error al obtener las palabras prohibidas: ${error}`,
+      );
+    }
+
+    const datos: DatosPalabrasProhibidasApi = await respuesta.json();
+
+    if (datos.lista === null) {
+      this.lista = [];
+    }
+
+    this.lista = datos.lista.split(", ");
+
+    return new Resultado();
+  }
+
+  public async actualizar(
+    nuevosDatos: DatosPalabrasProhibidas,
+  ): Promise<Resultado<void>> {
+    let nuevosDatosApi: DatosPalabrasProhibidasApi = {
+      lista: nuevosDatos.lista.join(", "),
+    };
+
+    nuevosDatosApi = formatearClavesNulas(nuevosDatosApi);
+
+    const respuesta = await fetch(this.ruta, {
+      method: "PUT",
+      headers: this.headers,
+      body: JSON.stringify(nuevosDatosApi),
+    });
+
+    if (!respuesta.ok) {
+      const error = JSON.stringify(await respuesta.json());
+      return new Resultado(
+        undefined,
+        `Error al actualizar las palabras prohibidas: ${error}`,
+      );
+    }
+
+    return new Resultado();
+  }
+}
+
 interface ManejadorDeTablas {
   ruta: string;
   obtener(): Promise<any>;
@@ -593,4 +655,12 @@ interface DatosMensajeProgramadoApi {
   tiempo: string | null;
   id_canal: string | null;
   activo: boolean;
+}
+
+export interface DatosPalabrasProhibidas {
+  lista: string[];
+}
+
+interface DatosPalabrasProhibidasApi {
+  lista: string | null;
 }

@@ -10,6 +10,7 @@ import Encuestas from "./interacciones/Encuestas";
 import MensajeIncrustado from "./interacciones/MensajeIncrustado";
 import ProgramadorDeMensajes from "@eventos/MensajesProgramados";
 import AccionesBase from "@lib/AccionesBase";
+import NuevoMensaje from "@eventos/NuevoMensaje";
 
 const log = pino();
 const cliente = new Client({
@@ -46,6 +47,7 @@ cliente.on("interactionCreate", (interaccion) => {
 cliente.on("messageCreate", (mensaje) => {
   ComandoPersonalizado.manejarMensaje(mensaje);
   Sugerencias.crearEmbedDeSugerencia(mensaje);
+  NuevoMensaje.verificarPalabrasProhibidas(mensaje);
 });
 
 cliente.on("guildMemberAdd", (mensaje) => {

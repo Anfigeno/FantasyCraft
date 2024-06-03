@@ -20,6 +20,7 @@ import {
   DatosEmbeds,
   DatosMensajeProgramado,
   DatosMensajesDelSistema,
+  DatosPalabrasProhibidas,
   DatosRolesDeAdministracion,
   DatosTickets,
 } from "@lib/Fantasy";
@@ -34,6 +35,7 @@ export default class PanelDeControl extends AccionesBase {
       embeds,
       rolesDeAdministracion,
       mensajesProgramados,
+      palabrasProhibidas,
     } = this.api;
 
     try {
@@ -44,6 +46,7 @@ export default class PanelDeControl extends AccionesBase {
       await embeds.obtener();
       await rolesDeAdministracion.obtener();
       await mensajesProgramados.obtener();
+      await palabrasProhibidas.obtener();
     } catch (error) {
       throw error;
     }
@@ -126,6 +129,15 @@ export default class PanelDeControl extends AccionesBase {
                 .join("")
             : "> Ninguno",
       },
+      {
+        name: "🔖 Palabras prohibidas",
+        value:
+          palabrasProhibidas.lista.length > 0
+            ? palabrasProhibidas.lista
+                .map((palabraProhibida) => `> ${palabraProhibida}`)
+                .join("\n")
+            : "> Ninguna",
+      },
     ];
 
     const embed = await this.crearEmbedEstilizado();
@@ -147,6 +159,7 @@ export default class PanelDeControl extends AccionesBase {
       OpcionComandosPersonalizados.opcion,
       OpcionRolesDeAdministracion.opcion,
       OpcionMensajesProgramados.opcion,
+      OpcionPalabrasProhibidas.opcion,
     ];
 
     const listaDeOpciones =
@@ -189,6 +202,7 @@ export default class PanelDeControl extends AccionesBase {
       OpcionComandosPersonalizados.mostrarModalRecolector(interaccion);
       OpcionRolesDeAdministracion.mostrarModalRecolector(interaccion);
       OpcionMensajesProgramados.mostrarModalRecolector(interaccion);
+      OpcionPalabrasProhibidas.mostrarModalRecolector(interaccion);
       //
     } else if (interaccion.isModalSubmit()) {
       //
@@ -201,6 +215,7 @@ export default class PanelDeControl extends AccionesBase {
         OpcionComandosPersonalizados.actualizarInformacion(interaccion);
         OpcionRolesDeAdministracion.actualizarInformacion(interaccion);
         OpcionMensajesProgramados.actualizarInformacion(interaccion);
+        OpcionPalabrasProhibidas.actualizarInformacion(interaccion);
       } catch (error) {
         this.log.error(error);
 
@@ -772,6 +787,61 @@ class OpcionMensajesProgramados extends AccionesBase {
       const { error } =
         await this.api.mensajesProgramados.actualizar(nuevosDatos);
       if (error) throw error;
+    } catch (error) {
+      throw error;
+    }
+  }
+}
+
+class OpcionPalabrasProhibidas extends AccionesBase {
+  public static opcion = new StringSelectMenuOptionBuilder()
+    .setEmoji("🔖")
+    .setLabel("Actualizar palabras prohibidas")
+    .setValue("palabras-prohibidas");
+
+  public static async mostrarModalRecolector(
+    interaccion: StringSelectMenuInteraction,
+  ): Promise<void> {
+    if (interaccion.customId !== "panel-de-control-opciones") return;
+    if (interaccion.values[0] !== "palabras-prohibidas") return;
+
+    const { palabrasProhibidas } = this.api;
+    await palabrasProhibidas.obtener();
+
+    const campos: TextInputBuilder[] = [
+      new TextInputBuilder()
+        .setValue(`${palabrasProhibidas.lista.join("\n")}`)
+        .setLabel("Lista de palabras prohibidas")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+        .setCustomId("palabras-prohibidas"),
+    ];
+
+    const modal = new ModalBuilder()
+      .setCustomId("modal-actualizar-palabras-prohibidas")
+      .setTitle("🔖 Actualizar palabras prohibidas")
+      .setComponents(
+        campos.map((campo) =>
+          new ActionRowBuilder<TextInputBuilder>().setComponents(campo),
+        ),
+      );
+
+    await interaccion.showModal(modal);
+  }
+
+  public static async actualizarInformacion(
+    interaccion: ModalSubmitInteraction,
+  ): Promise<void> {
+    if (interaccion.customId !== "modal-actualizar-palabras-prohibidas") return;
+
+    const { fields: campos } = interaccion;
+
+    const nuevosDatos: DatosPalabrasProhibidas = {
+      lista: campos.getTextInputValue("palabras-prohibidas").split("\n"),
+    };
+
+    try {
+      await this.api.palabrasProhibidas.actualizar(nuevosDatos);
     } catch (error) {
       throw error;
     }
