@@ -17,6 +17,10 @@ const comandos: RequestData["body"] = [
     name: "mensaje-incrustado",
     description: "Crea un mensaje incrustado",
   },
+  {
+    name: "sugerencias",
+    description: "Crea una sugerencia",
+  },
 ];
 
 export default comandos;

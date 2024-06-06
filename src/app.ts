@@ -4,13 +4,13 @@ import Util from "./lib/Util";
 import PanelDeControl from "./interacciones/PanelDeControl";
 import PanelDeTickets from "./interacciones/PanelDeTickets.civet";
 import ComandoPersonalizado from "@eventos/ComandoPersonalizado";
-import Sugerencias from "@eventos/Sugerencias.civet";
-import NuevoUsuario from "@eventos/NuevoUsuario.civet";
+import NuevoUsuario from "@eventos/NuevoUsuario";
 import Encuestas from "./interacciones/Encuestas";
 import MensajeIncrustado from "./interacciones/MensajeIncrustado";
 import ProgramadorDeMensajes from "@eventos/MensajesProgramados";
 import AccionesBase from "@lib/AccionesBase";
 import NuevoMensaje from "@eventos/NuevoMensaje";
+import Sugerencias from "./interacciones/Sugerencias";
 
 const log = pino();
 const cliente = new Client({
@@ -42,11 +42,11 @@ cliente.on("interactionCreate", (interaccion) => {
   PanelDeTickets.manejarInteraccion(interaccion);
   Encuestas.manejarInteraccion(interaccion);
   MensajeIncrustado.manejarInteraccion(interaccion);
+  Sugerencias.manejarInteraccion(interaccion);
 });
 
 cliente.on("messageCreate", (mensaje) => {
   ComandoPersonalizado.manejarMensaje(mensaje);
-  Sugerencias.crearEmbedDeSugerencia(mensaje);
   NuevoMensaje.verificarPalabrasProhibidas(mensaje);
 });
 
