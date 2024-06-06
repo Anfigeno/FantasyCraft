@@ -96,7 +96,10 @@ export default class ProgramadorDeMensajes extends AccionesBase {
     );
 
     setTimeout(async () => {
-      await this.enviarMensajeIncrustado(datos, servidor);
+      const enviarMensaje = await this.enviarMensajeIncrustado(datos, servidor);
+      if (enviarMensaje.error !== null) {
+        this.log.error(enviarMensaje.error);
+      }
 
       let { error } = await this.activarMensajeProgramado(datos);
       if (error !== null) {
@@ -108,43 +111,37 @@ export default class ProgramadorDeMensajes extends AccionesBase {
   private static async enviarMensajeIncrustado(
     datos: DatosMensajeProgramado,
     servidor: Guild,
-  ): Promise<void> {
+  ): Promise<Resultado<void>> {
     const embed = (await this.crearEmbedEstilizado())
       .setTitle(datos.titulo)
       .setDescription(datos.descripcion);
 
-    if (datos.imagen) {
-      try {
-        embed.setImage(datos.imagen);
-      } catch (error) {
-        this.log.error(
-          `Error al establecer la imágen del mensaje programado ${datos.titulo}`,
-        );
-      }
-    }
-
-    if (datos.miniatura) {
-      try {
-        embed.setThumbnail(datos.miniatura);
-      } catch (error) {
-        this.log.error(
-          `Error al establecer la imágen del mensaje programado ${datos.titulo}`,
-        );
-      }
+    try {
+      embed.setImage(datos.imagen);
+    } catch (error) {
+      this.log.error(
+        `Error al establecer la imágen del mensaje programado ${datos.titulo}`,
+      );
     }
 
     try {
-      const canal = await this.obtenerCanal(datos.idCanal, servidor);
-
-      if (canal.isTextBased()) {
-        canal.send({
-          embeds: [embed],
-        });
-      }
+      embed.setThumbnail(datos.miniatura);
     } catch (error) {
-      throw new Error(
-        `Error al mandar el mensaje programado ${datos.titulo}: ${error}`,
+      this.log.error(
+        `Error al establecer la imágen del mensaje programado ${datos.titulo}`,
       );
     }
+
+    const canal = await this.obtenerCanal(datos.idCanal, servidor);
+
+    if (canal.error !== null) {
+      return new Resultado(undefined, canal.error);
+    }
+
+    await canal.datos.send({
+      embeds: [embed],
+    });
+
+    return new Resultado();
   }
 }

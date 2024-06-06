@@ -1,8 +1,11 @@
 import AccionesBase from "@lib/AccionesBase";
+import Resultado from "@lib/Resultado";
 import {
   ActionRowBuilder,
   CommandInteraction,
+  Guild,
   GuildMember,
+  GuildTextBasedChannel,
   Interaction,
   ModalBuilder,
   ModalSubmitInteraction,
@@ -94,42 +97,44 @@ export default class Encuestas extends AccionesBase {
     const embed = await this.crearEmbedEstilizado();
     embed.setTitle(datos.titulo).setDescription(datos.descripcion);
 
+    const canalDeEncuestas = await this.obtenerCanalDeEncuestas(servidor);
+
+    if (canalDeEncuestas.error !== null) {
+      this.log.error(canalDeEncuestas.error);
+
+      await interaccion.reply({
+        content: "Error al crear la encuesta",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    const mensajeDeEncuesta = await canalDeEncuestas.datos.send({
+      embeds: [embed],
+    });
+
+    datos.reacciones.forEach(async (reaccion) => {
+      await mensajeDeEncuesta.react(reaccion);
+    });
+
+    await interaccion.reply({
+      content: `Encuesta creada en ${canalDeEncuestas.datos}!`,
+      ephemeral: true,
+    });
+  }
+
+  private static async obtenerCanalDeEncuestas(
+    servidor: Guild,
+  ): Promise<Resultado<GuildTextBasedChannel>> {
     const { canalesImportantes } = this.api;
     await canalesImportantes.obtener();
 
-    try {
-      const canalDeEncuestas = await this.obtenerCanal(
-        canalesImportantes.idVotaciones,
-        servidor,
-      );
+    const canalDeEncuestas = await this.obtenerCanal(
+      canalesImportantes.idVotaciones,
+      servidor,
+    );
 
-      if (canalDeEncuestas.isTextBased()) {
-        const encuesta = await canalDeEncuestas.send({
-          embeds: [embed],
-        });
-
-        datos.reacciones.forEach(async (reaccion) => {
-          await encuesta.react(reaccion);
-        });
-
-        await interaccion.reply({
-          content: `Encuesta creada en ${canalDeEncuestas}!`,
-          ephemeral: true,
-        });
-      } else {
-        await interaccion.reply({
-          content: "El canal de votaciones establecido no es un canal de texto",
-          ephemeral: true,
-        });
-      }
-    } catch (error) {
-      this.log.error(`Error al crear una encuesta: ${error}`);
-
-      await interaccion.reply({
-        content: "Error al ejecutar esta interacción",
-        ephemeral: true,
-      });
-    }
+    return canalDeEncuestas;
   }
 
   private static validarReacciones(reacciones: string[]): void {

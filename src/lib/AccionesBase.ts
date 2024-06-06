@@ -3,8 +3,8 @@ import {
   EmbedBuilder,
   Guild,
   GuildMember,
-  GuildBasedChannel,
   Client,
+  GuildTextBasedChannel,
 } from "discord.js";
 import Fantasy from "./Fantasy";
 import Util from "./Util";
@@ -46,13 +46,18 @@ export default class AccionesBase {
   public static async obtenerCanal(
     id: string,
     servidor: Guild,
-  ): Promise<GuildBasedChannel> {
+  ): Promise<Resultado<GuildTextBasedChannel>> {
     const canal = await servidor.channels.fetch(id);
+
     if (!canal) {
-      throw new Error(`El canal de id ${id} no existe`);
+      return new Resultado(undefined, `El canal de id ${id} no existe`);
     }
 
-    return canal;
+    if (!canal.isTextBased()) {
+      return new Resultado(undefined, "El canal no es un canal de texto");
+    }
+
+    return new Resultado(canal);
   }
 
   public static async obtenerServidor(
