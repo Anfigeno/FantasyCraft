@@ -1,3 +1,5 @@
+import pino from "pino";
+
 export default class Util {
   public static Env(clave: string): string {
     const variableDeEntorno = process.env[clave];
@@ -8,4 +10,6 @@ export default class Util {
 
     return variableDeEntorno;
   }
+
+  public static log = pino();
 }

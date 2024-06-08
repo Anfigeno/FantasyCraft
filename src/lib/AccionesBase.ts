@@ -5,6 +5,10 @@ import {
   GuildMember,
   Client,
   GuildTextBasedChannel,
+  CommandInteraction,
+  ButtonInteraction,
+  StringSelectMenuInteraction,
+  ModalSubmitInteraction,
 } from "discord.js";
 import Fantasy from "./Fantasy";
 import Util from "./Util";
@@ -71,5 +75,37 @@ export default class AccionesBase {
     }
 
     return new Resultado(servidor);
+  }
+
+  public static async responderFalloDeInteraccion(
+    interaccion:
+      | CommandInteraction
+      | ButtonInteraction
+      | StringSelectMenuInteraction
+      | ModalSubmitInteraction,
+  ): Promise<void> {
+    await interaccion.reply({
+      content: "Ocurrió un error al ejecutar esta interacción",
+      ephemeral: true,
+    });
+  }
+
+  public static async miembroEsStaff(miembro: GuildMember): Promise<boolean> {
+    const { rolesDeAdministracion } = this.api;
+    const [_, error] = await Resultado.asincrono(() =>
+      rolesDeAdministracion.obtener(),
+    );
+    if (error !== null) {
+      Util.log.error(error);
+      return false;
+    }
+
+    const miembroEsStaff = miembro.roles.cache.find(
+      (rol) =>
+        rol.id === rolesDeAdministracion.idAdministrador ||
+        rol.id === rolesDeAdministracion.idStaff,
+    );
+
+    return miembroEsStaff !== undefined;
   }
 }

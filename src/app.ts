@@ -2,7 +2,6 @@ import { Client, GatewayIntentBits } from "discord.js";
 import pino from "pino";
 import Util from "./lib/Util";
 import PanelDeControl from "./interacciones/PanelDeControl";
-import PanelDeTickets from "./interacciones/PanelDeTickets.civet";
 import ComandoPersonalizado from "@eventos/ComandoPersonalizado";
 import NuevoUsuario from "@eventos/NuevoUsuario";
 import Encuestas from "./interacciones/Encuestas";
@@ -11,6 +10,7 @@ import ProgramadorDeMensajes from "@eventos/MensajesProgramados";
 import AccionesBase from "@lib/AccionesBase";
 import NuevoMensaje from "@eventos/NuevoMensaje";
 import Sugerencias from "./interacciones/Sugerencias";
+import panelDeTickets from "./interacciones/PanelDeTickets";
 
 const log = pino();
 const cliente = new Client({
@@ -39,10 +39,10 @@ cliente.login(token);
 
 cliente.on("interactionCreate", (interaccion) => {
   PanelDeControl.manejarInteraccion(interaccion);
-  PanelDeTickets.manejarInteraccion(interaccion);
   Encuestas.manejarInteraccion(interaccion);
   MensajeIncrustado.manejarInteraccion(interaccion);
   Sugerencias.manejarInteraccion(interaccion);
+  panelDeTickets.manejarInteraccion(interaccion);
 });
 
 cliente.on("messageCreate", (mensaje) => {

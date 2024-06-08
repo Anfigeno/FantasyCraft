@@ -5,6 +5,7 @@
       "@lib/*": ["./src/lib/*"],
       "@interacciones/*": ["./src/lib/*"],
       "@eventos/*": ["./src/eventos/*"]
-    }
+    },
+    "experimentalDecorators": true
   }
 }
