@@ -108,11 +108,11 @@ export default class PanelDeControl extends AccionesBase {
         name: "👮 Roles de administración",
         value:
           (rolesDeAdministracion.idAdministrador
-            ? `> Administrador: ${rolesDeAdministracion.idAdministrador}`
+            ? `> Administrador: <@&${rolesDeAdministracion.idAdministrador}>`
             : "> Administrador: No definido") +
           "\n" +
           (rolesDeAdministracion.idStaff
-            ? `> Staff: ${rolesDeAdministracion.idStaff}`
+            ? `> Staff: <@&${rolesDeAdministracion.idStaff}>`
             : "> Staff: No definido"),
       },
       {
