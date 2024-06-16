@@ -1,6 +1,6 @@
 {
   "name": "fantasycraft",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "author": "Anfigeno",
   "main": "src/app.ts",
   "dependencies": {
@@ -15,7 +15,9 @@
   "license": "ISC",
   "scripts": {
     "dev": "bun --watch ./src/app.ts | pino-pretty",
-    "registrar-comandos": "bun ./src/registrarComandos.ts | pino-pretty"
+    "registrar-comandos": "bun ./src/registrarComandos.ts | pino-pretty",
+    "construir": "bun build ./src/app.ts --outdir ./produccion --target bun",
+    "iniciar": "bun ./produccion/app.js | pino-pretty"
   },
   "type": "module"
 }
